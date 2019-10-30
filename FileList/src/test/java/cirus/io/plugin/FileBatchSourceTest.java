@@ -16,6 +16,7 @@
 
 package cirus.io.plugin;
 
+import cirus.io.plugin.constant.Constants;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.cdap.cdap.api.data.format.StructuredRecord;
@@ -50,7 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-/** Tests to verify configuration of {@link FileListSource} */
+/** Tests to verify configuration of {@link AbstractFileSource} */
 public class FileBatchSourceTest extends ETLBatchTestBase {
   public static final String PATH = "path";
   public static final String RECURSIVE = "recursive";

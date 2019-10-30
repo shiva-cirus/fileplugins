@@ -14,7 +14,7 @@
  * the License.
  */
 
-package cirus.io.plugin;
+package cirus.io.plugin.constant;
 
 /**
  * Class that contains common names and description used across plugins.
