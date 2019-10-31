@@ -35,7 +35,7 @@ import java.io.IOException;
  * from, and to add the file URI to each record. In addition, for text files, it can be configured to keep track
  * of the header for the file, which underlying record readers can use.
  */
-public abstract class PathTrackingInputFormat extends FileInputFormat<NullWritable, StructuredRecord> {
+public abstract class PathTrackingInputFormat extends FileInputFormat<String, StructuredRecord> {
   /**
    * This property is used to configure the record readers to emit the header as the first record read,
    * regardless of if it is actually in the input split.
@@ -50,7 +50,7 @@ public abstract class PathTrackingInputFormat extends FileInputFormat<NullWritab
 
 
   @Override
-  public RecordReader<NullWritable, StructuredRecord> createRecordReader(InputSplit split,
+  public RecordReader<String, StructuredRecord> createRecordReader(InputSplit split,
                                                                          TaskAttemptContext context)
           throws IOException, InterruptedException {
 
@@ -66,24 +66,24 @@ public abstract class PathTrackingInputFormat extends FileInputFormat<NullWritab
     String schema = hConf.get(SCHEMA);
     Schema parsedSchema = schema == null ? null : Schema.parseJson(schema);
 
-    RecordReader<NullWritable, StructuredRecord.Builder> delegate = createRecordReader(fileSplit, context,
+    RecordReader<String, StructuredRecord.Builder> delegate = createRecordReader(fileSplit, context,
             pathField, parsedSchema);
     return new TrackingRecordReader(delegate, pathField, path);
   }
 
-  protected abstract RecordReader<NullWritable, StructuredRecord.Builder> createRecordReader(
+  protected abstract RecordReader<String, StructuredRecord.Builder> createRecordReader(
           FileSplit split, TaskAttemptContext context,
           @Nullable String pathField, @Nullable Schema schema) throws IOException, InterruptedException;
 
   /**
    * Supports adding a field to each record that contains the path of the file the record was read from.
    */
-  static class TrackingRecordReader extends RecordReader<NullWritable, StructuredRecord> {
-    private final RecordReader<NullWritable, StructuredRecord.Builder> delegate;
+  static class TrackingRecordReader extends RecordReader<String, StructuredRecord> {
+    private final RecordReader<String, StructuredRecord.Builder> delegate;
     private final String pathField;
     private final String path;
 
-    TrackingRecordReader(RecordReader<NullWritable, StructuredRecord.Builder> delegate,
+    TrackingRecordReader(RecordReader<String, StructuredRecord.Builder> delegate,
                          @Nullable String pathField, String path) {
       this.delegate = delegate;
       this.pathField = pathField;
@@ -96,8 +96,8 @@ public abstract class PathTrackingInputFormat extends FileInputFormat<NullWritab
     }
 
     @Override
-    public NullWritable getCurrentKey() {
-      return NullWritable.get();
+    public String getCurrentKey() {
+      return path;
     }
 
     @Override

@@ -16,13 +16,9 @@
 
 package cirus.io.plugin.format;
 
-import com.google.common.io.ByteStreams;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -33,10 +29,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 
-
-/**
- * Blob input format
- */
+/** Blob input format */
 public class PathTrackingBlobInputFormat extends PathTrackingInputFormat {
 
   @Override
@@ -51,16 +44,17 @@ public class PathTrackingBlobInputFormat extends PathTrackingInputFormat {
   }
 
   @Override
-  protected RecordReader<NullWritable, StructuredRecord.Builder> createRecordReader(FileSplit split,
-                                                                                    TaskAttemptContext context,
-                                                                                    @Nullable String pathField,
-                                                                                    @Nullable Schema schema) {
+  protected RecordReader<String, StructuredRecord.Builder> createRecordReader(
+      FileSplit split,
+      TaskAttemptContext context,
+      @Nullable String pathField,
+      @Nullable Schema schema) {
     if (split.getLength() > Integer.MAX_VALUE) {
       throw new IllegalArgumentException("Blob format cannot be used with files larger than 2GB");
     }
-    return new RecordReader<NullWritable, StructuredRecord.Builder>() {
+    return new RecordReader<String, StructuredRecord.Builder>() {
       boolean hasNext;
-      byte[] val;
+      String val;
 
       @Override
       public void initialize(InputSplit split, TaskAttemptContext context) {
@@ -79,17 +73,14 @@ public class PathTrackingBlobInputFormat extends PathTrackingInputFormat {
         }
 
         Path path = split.getPath();
-        FileSystem fs = path.getFileSystem(context.getConfiguration());
-        try (FSDataInputStream input = fs.open(path)) {
-          val = new byte[(int) split.getLength()];
-          ByteStreams.readFully(input, val);
-        }
+        val = path.toUri().getPath();
+
         return true;
       }
 
       @Override
-      public NullWritable getCurrentKey() {
-        return NullWritable.get();
+      public String getCurrentKey() {
+        return val;
       }
 
       @Override
@@ -108,6 +99,5 @@ public class PathTrackingBlobInputFormat extends PathTrackingInputFormat {
         // no-op
       }
     };
-
   }
 }
