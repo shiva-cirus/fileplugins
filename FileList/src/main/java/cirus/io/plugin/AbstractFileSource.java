@@ -107,11 +107,10 @@ public abstract class AbstractFileSource<T extends PluginConfig & FileSourceProp
 
     FileStatus[] fileStatus = pathFileSystem.globStatus(path);
 
-    String inputFormatClass = null;
+    String inputFormatClass = PathTrackingBlobInputFormat.class.getName();
     if (fileStatus != null) {
       FileInputFormat.addInputPath(job, path);
       FileInputFormat.setMaxInputSplitSize(job, config.getMaxSplitSize());
-      inputFormatClass = PathTrackingBlobInputFormat.class.getName();
       Configuration hConf = job.getConfiguration();
       Map<String, String> inputFormatConfiguration = getInputFormatConfiguration();
       for (Map.Entry<String, String> propertyEntry : inputFormatConfiguration.entrySet()) {
