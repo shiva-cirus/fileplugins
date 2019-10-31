@@ -43,9 +43,11 @@ public abstract class PathTrackingInputFormat extends FileInputFormat<NullWritab
    * there is a proper solution in wrangler.
    */
   public static final String COPY_HEADER = "path.tracking.copy.header";
-  static final String PATH_FIELD = "path.tracking.path.field";
-  static final String FILENAME_ONLY = "path.tracking.filename.only";
-  static final String SCHEMA = "schema";
+  public static final String PATH_FIELD = "path.tracking.path.field";
+  public static final String FILENAME_ONLY = "path.tracking.filename.only";
+  public static final String SCHEMA = "schema";
+  public static final String NAME_SCHEMA = "schema";
+
 
   @Override
   public RecordReader<NullWritable, StructuredRecord> createRecordReader(InputSplit split,

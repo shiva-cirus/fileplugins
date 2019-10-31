@@ -24,8 +24,6 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.plugin.PluginConfig;
-import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.plugin.common.IdUtils;
 
 import javax.annotation.Nullable;
 import java.util.regex.Pattern;
@@ -102,7 +100,6 @@ public abstract class AbstractFileSourceConfig extends PluginConfig implements F
 
   protected AbstractFileSourceConfig() {
     // empty constructor is used to set default values.
-    format = FileFormat.TEXT.name().toLowerCase();
     maxSplitSize = 128L * 1024 * 1024;
     ignoreNonExistingFolders = false;
     recursive = false;
@@ -114,31 +111,6 @@ public abstract class AbstractFileSourceConfig extends PluginConfig implements F
     IdUtils.validateId(referenceName);
     getFormat();
     getSchema();
-  }
-
-  public void validate(FailureCollector collector) {
-    //TODO fixme
-    //IdUtils.validateReferenceName(referenceName, collector);
-    try {
-      getFormat();
-    } catch (IllegalArgumentException e) {
-      collector.addFailure(e.getMessage(), null).withConfigProperty(NAME_FORMAT).withStacktrace(e.getStackTrace());
-    }
-    try {
-      getSchema();
-    } catch (IllegalArgumentException e) {
-      collector.addFailure(e.getMessage(), null).withConfigProperty(NAME_SCHEMA).withStacktrace(e.getStackTrace());
-    }
-
-    // if failure collector has not collected any errors, that would mean either validation has succeeded or config
-    // is using deprecated validate method without collector. In that case, call deprecated validate method.
-    if (collector.getValidationFailures().isEmpty()) {
-      try {
-        validate();
-      } catch (Exception e) {
-        collector.addFailure(e.getMessage(), null).withStacktrace(e.getStackTrace());
-      }
-    }
   }
 
   @Override

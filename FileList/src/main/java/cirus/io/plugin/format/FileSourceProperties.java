@@ -18,7 +18,6 @@ package cirus.io.plugin.format;
 
 import cirus.io.plugin.AbstractFileSource;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.etl.api.FailureCollector;
 
 import javax.annotation.Nullable;
 import java.util.regex.Pattern;
@@ -33,25 +32,6 @@ import java.util.regex.Pattern;
 public interface FileSourceProperties {
   String PATH_FIELD = "pathField";
 
-  /**
-   * Validates the properties.
-   *
-   * @throws IllegalArgumentException if anything is invalid
-   * Deprecated since 2.3.0. Use {@link FileSourceProperties#validate(FailureCollector)} method instead.
-   */
-  @Deprecated
-  default void validate() {
-    // no-op
-  }
-
-  /**
-   * Validates the properties and collects validation failures if anything is invalid.
-   *
-   * @param collector failure collector
-   */
-  default void validate(FailureCollector collector) {
-    // no-op
-  }
 
   /**
    * Get the name that will be used to identify the source for lineage and metadata.

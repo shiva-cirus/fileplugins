@@ -21,7 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
-import io.cdap.cdap.etl.api.FailureCollector;
+
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -58,16 +58,6 @@ public class FileSourceConfig extends AbstractFileSourceConfig {
   public void validate() {
     super.validate();
     getFileSystemProperties();
-  }
-
-  public void validate(FailureCollector collector) {
-    super.validate(collector);
-    try {
-      getFileSystemProperties();
-    } catch (IllegalArgumentException e) {
-      collector.addFailure("File system properties must be a valid json.", null)
-        .withConfigProperty(NAME_FILE_SYSTEM_PROPERTIES).withStacktrace(e.getStackTrace());
-    }
   }
 
   Map<String, String> getFileSystemProperties() {

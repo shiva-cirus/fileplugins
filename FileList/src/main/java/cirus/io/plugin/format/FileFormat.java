@@ -26,19 +26,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * FileFormat supported by the file based sources/sinks. Some formats can be used for both reading and writing.
- * TODO: remove once formats have completely been converted to plugins
+ * FileFormat supported by the file based sources/sinks. Some formats can be used for both reading
+ * and writing. TODO: remove once formats have completely been converted to plugins
  */
 public enum FileFormat {
-  AVRO(true, true),
-  BLOB(true, false),
-  CSV(true, true),
-  DELIMITED(true, true),
-  JSON(true, true),
-  ORC(false, true),
-  PARQUET(true, true),
-  TEXT(true, false),
-  TSV(true, true);
+  BLOB(true, false);
   private final boolean canRead;
   private final boolean canWrite;
 
@@ -56,24 +48,18 @@ public enum FileFormat {
   }
 
   /**
-   * Return the schema for this format, if the format requires a specific schema. Returns null if the format does
-   * not require a specific schema. Should only be called for formats that can read.
+   * Return the schema for this format, if the format requires a specific schema. Returns null if
+   * the format does not require a specific schema. Should only be called for formats that can read.
    *
    * @param pathField the field of the file path, if it exists.
    * @return the schema required by the format, if it exists
    */
   @Nullable
   public Schema getSchema(@Nullable String pathField) {
-    // TODO: move into the plugin formats once it is possible to instantiate them in the get schema methods.
+    // TODO: move into the plugin formats once it is possible to instantiate them in the get schema
+    // methods.
     List<Schema.Field> fields = new ArrayList<>(3);
     switch (this) {
-      case TEXT:
-        fields.add(Schema.Field.of("offset", Schema.of(Schema.Type.LONG)));
-        fields.add(Schema.Field.of("body", Schema.of(Schema.Type.STRING)));
-        if (pathField != null) {
-          fields.add(Schema.Field.of(pathField, Schema.of(Schema.Type.STRING)));
-        }
-        return Schema.recordOf("text", fields);
       case BLOB:
         fields.add(Schema.Field.of("body", Schema.of(Schema.Type.BYTES)));
         if (pathField != null) {
@@ -86,16 +72,16 @@ public enum FileFormat {
   }
 
   /**
-   * Get a FileFormat from the specified string. This is similar to the valueOf method except that the error
-   * message will contain the full set of valid values. It also supports filtering which enum values are valid.
-   * This can be used to only get FileFormats that can be used for reading or only get formats that can be used
-   * for writing.
+   * Get a FileFormat from the specified string. This is similar to the valueOf method except that
+   * the error message will contain the full set of valid values. It also supports filtering which
+   * enum values are valid. This can be used to only get FileFormats that can be used for reading or
+   * only get formats that can be used for writing.
    *
    * @param format the format to get
    * @param isValidFormat a filter used to only allow certain enum values
    * @return the FileFormat corresponding to the specified string
-   * @throws IllegalArgumentException if the specified format does not have an equivalent value that also satisfies the
-   *   specified predicate
+   * @throws IllegalArgumentException if the specified format does not have an equivalent value that
+   *     also satisfies the specified predicate
    */
   public static FileFormat from(String format, Predicate<FileFormat> isValidFormat) {
     FileFormat fileFormat;
@@ -112,15 +98,14 @@ public enum FileFormat {
     return fileFormat;
   }
 
-  /**
-   * Return an error message that enumerates all valid values that are acceptable.
-   */
+  /** Return an error message that enumerates all valid values that are acceptable. */
   private static String getExceptionMessage(String format, Predicate<FileFormat> isValid) {
-    String values = Arrays.stream(FileFormat.values())
-      .filter(isValid)
-      .map(f -> f.name().toLowerCase())
-      .collect(Collectors.joining(", "));
-    throw new IllegalArgumentException(String.format("Invalid format '%s'. The value must be one of %s",
-                                                     format, values));
+    String values =
+        Arrays.stream(FileFormat.values())
+            .filter(isValid)
+            .map(f -> f.name().toLowerCase())
+            .collect(Collectors.joining(", "));
+    throw new IllegalArgumentException(
+        String.format("Invalid format '%s'. The value must be one of %s", format, values));
   }
 }
