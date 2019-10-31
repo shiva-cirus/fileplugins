@@ -14,14 +14,6 @@ Properties
 
 **Path:** Path to read from. For example, s3a://<bucket>/path/to/input
 
-**Format:** Format of the data to read.
-The format must be one of 'avro', 'blob', 'csv', 'delimited', 'json', 'parquet', 'text', or 'tsv'.
-If the format is 'blob', every input file will be read into a separate record.
-The 'blob' format also requires a schema that contains a field named 'body' of type 'bytes'.
-If the format is 'text', the schema must contain a field named 'body' of type 'string'.
-
-**Delimiter:** Delimiter to use when the format is 'delimited'. This will be ignored for other formats.
-
 **Maximum Split Size:** Maximum size in bytes for each input partition.
 Smaller partitions will increase the level of parallelism, but will require more resources and overhead.
 The default value is 128MB.

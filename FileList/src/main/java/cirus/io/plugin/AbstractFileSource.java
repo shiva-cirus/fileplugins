@@ -67,7 +67,6 @@ public abstract class AbstractFileSource<T extends PluginConfig & FileSourceProp
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
 
-    FileFormat fileFormat = config.getFormat();
     Schema schema = null;
 
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
@@ -76,7 +75,6 @@ public abstract class AbstractFileSource<T extends PluginConfig & FileSourceProp
   @Override
   public void prepareRun(BatchSourceContext context) throws Exception {
 
-    FileFormat fileFormat = config.getFormat();
     Job job = JobUtils.createInstance();
     Configuration conf = job.getConfiguration();
 
@@ -161,7 +159,7 @@ public abstract class AbstractFileSource<T extends PluginConfig & FileSourceProp
   protected void recordLineage(LineageRecorder lineageRecorder, List<String> outputFields) {
     lineageRecorder.recordRead(
         "Read",
-        String.format("Read from %s files.", config.getFormat().name().toLowerCase()),
+        String.format("Read files."),
         outputFields);
   }
 }

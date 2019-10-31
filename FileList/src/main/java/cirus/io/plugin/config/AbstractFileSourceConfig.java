@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"unused", "ConstantConditions"})
 public abstract class AbstractFileSourceConfig extends PluginConfig implements FileSourceProperties {
-  public static final String NAME_FORMAT = "format";
   public static final String NAME_SCHEMA = "schema";
 
 
@@ -49,10 +48,6 @@ public abstract class AbstractFileSourceConfig extends PluginConfig implements F
     + "See https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html for more information about "
     + "the regular expression syntax.")
   private String fileRegex;
-
-  @Description("Format of the data to read. Supported formats are 'avro', 'blob', 'csv', 'delimited', 'json', "
-    + "'parquet', 'text', or 'tsv'. ")
-  private String format;
 
   @Nullable
   @Description("Maximum size of each partition used to read data. "
@@ -87,11 +82,6 @@ public abstract class AbstractFileSourceConfig extends PluginConfig implements F
     + "read the data.")
   private String schema;
 
-  @Macro
-  @Nullable
-  @Description("The delimiter to use if the format is 'delimited'. The delimiter will be ignored if the format "
-    + "is anything other than 'delimited'.")
-  private String delimiter;
 
   // this is a hidden property that only exists for wrangler's parse-as-csv that uses the header as the schema
   // when this is true and the format is text, the header will be the first record returned by every record reader
@@ -109,18 +99,12 @@ public abstract class AbstractFileSourceConfig extends PluginConfig implements F
 
   public void validate() {
     IdUtils.validateId(referenceName);
-    getFormat();
     getSchema();
   }
 
   @Override
   public String getReferenceName() {
     return referenceName;
-  }
-
-  @Override
-  public FileFormat getFormat() {
-    return FileFormat.from(format, x -> true);
   }
 
   @Nullable

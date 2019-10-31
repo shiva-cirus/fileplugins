@@ -44,11 +44,6 @@ public interface FileSourceProperties {
   String getPath();
 
   /**
-   * Get the format of the data to read.
-   */
-  FileFormat getFormat();
-
-  /**
    * Get the pattern that file names must match if filename filter should be done.
    */
   @Nullable
