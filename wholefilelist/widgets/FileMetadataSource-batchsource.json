@@ -63,38 +63,6 @@
           {
             "name": "fullPath",
             "type": "string"
-          },
-          {
-            "name": "fileSize",
-            "type": "long"
-          },
-          {
-            "name": "modificationTime",
-            "type": "long"
-          },
-          {
-            "name": "group",
-            "type": "string"
-          },
-          {
-            "name": "owner",
-            "type": "string"
-          },
-          {
-            "name": "isDir",
-            "type": "boolean"
-          },
-          {
-            "name": "relativePath",
-            "type": "string"
-          },
-          {
-            "name": "permission",
-            "type": "int"
-          },
-          {
-            "name": "hostURI",
-            "type": "string"
           }
         ]
       }

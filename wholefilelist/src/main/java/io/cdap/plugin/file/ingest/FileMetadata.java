@@ -1,12 +1,12 @@
 /*
  * Copyright © 2017 Cask Data, Inc.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *  
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Abstract class that contains file metadata fields.
- * Extend from this class to add credentials specific to different filesystems.
+ * Abstract class that contains file metadata fields. Extend from this class to add credentials
+ * specific to different filesystems.
  */
 public class FileMetadata implements Comparable<FileMetadata> {
 
@@ -47,20 +47,11 @@ public class FileMetadata implements Comparable<FileMetadata> {
   public static final String HOST_URI = "hostURI";
 
   // The default schema that will be used to convert this object to a StructuredRecord.
-  public static final Schema DEFAULT_SCHEMA = Schema.recordOf(
-    "metadata",
-    Schema.Field.of(FILE_NAME, Schema.of(Schema.Type.STRING)),
-    Schema.Field.of(FULL_PATH, Schema.of(Schema.Type.STRING)),
-    Schema.Field.of(FILE_SIZE, Schema.of(Schema.Type.LONG)),
-    Schema.Field.of(MODIFICATION_TIME, Schema.of(Schema.Type.LONG)),
-    Schema.Field.of(GROUP, Schema.of(Schema.Type.STRING)),
-    Schema.Field.of(OWNER, Schema.of(Schema.Type.STRING)),
-    Schema.Field.of(IS_DIR, Schema.of(Schema.Type.BOOLEAN)),
-    Schema.Field.of(RELATIVE_PATH, Schema.of(Schema.Type.STRING)),
-    Schema.Field.of(PERMISSION, Schema.of(Schema.Type.INT)),
-    Schema.Field.of(HOST_URI, Schema.of(Schema.Type.STRING))
-  );
-
+  public static final Schema DEFAULT_SCHEMA =
+      Schema.recordOf(
+          "metadata",
+          Schema.Field.of(FILE_NAME, Schema.of(Schema.Type.STRING)),
+          Schema.Field.of(FULL_PATH, Schema.of(Schema.Type.STRING)));
 
   // contains only the name of the file
   private final String fileName;
@@ -105,8 +96,8 @@ public class FileMetadata implements Comparable<FileMetadata> {
   private final String hostURI;
 
   /**
-   * Constructs a FileMetadata instance given a FileStatus and source path. Override this method to add additional
-   * credential fields to the instance.
+   * Constructs a FileMetadata instance given a FileStatus and source path. Override this method to
+   * add additional credential fields to the instance.
    *
    * @param fileStatus The FileStatus object that contains raw file metadata for this object.
    * @param sourcePath The user specified path that was used to obtain this file.
@@ -131,16 +122,21 @@ public class FileMetadata implements Comparable<FileMetadata> {
 
     // construct host URI given the full path from filestatus
     try {
-      hostURI = new URI(fileStatus.getPath().toUri().getScheme(), fileStatus.getPath().toUri().getHost(),
-                        Path.SEPARATOR, null).toString();
+      hostURI =
+          new URI(
+                  fileStatus.getPath().toUri().getScheme(),
+                  fileStatus.getPath().toUri().getHost(),
+                  Path.SEPARATOR,
+                  null)
+              .toString();
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }
   }
 
   /**
-   * Use this constructor to construct a FileMetadata from a StructuredRecord. Override this method if additional
-   * credentials are contained in the structured record.
+   * Use this constructor to construct a FileMetadata from a StructuredRecord. Override this method
+   * if additional credentials are contained in the structured record.
    *
    * @param record The StructuredRecord instance to convert from.
    */
@@ -215,9 +211,7 @@ public class FileMetadata implements Comparable<FileMetadata> {
     return hostURI;
   }
 
-  /**
-   * Converts to a StructuredRecord
-   */
+  /** Converts to a StructuredRecord */
   public StructuredRecord toRecord() {
     // initialize credential schema
     List<Schema.Field> credentialSchemaList;
@@ -233,17 +227,10 @@ public class FileMetadata implements Comparable<FileMetadata> {
     fieldList.addAll(credentialSchemaList);
     outputSchema = Schema.recordOf("metadata", fieldList);
 
-    StructuredRecord.Builder outputBuilder = StructuredRecord.builder(outputSchema)
-      .set(FILE_NAME, fileName)
-      .set(FULL_PATH, fullPath)
-      .set(FILE_SIZE, fileSize)
-      .set(MODIFICATION_TIME, modificationTime)
-      .set(GROUP, group)
-      .set(OWNER, owner)
-      .set(IS_DIR, isDir)
-      .set(RELATIVE_PATH, relativePath)
-      .set(PERMISSION, permission)
-      .set(HOST_URI, hostURI);
+    StructuredRecord.Builder outputBuilder =
+        StructuredRecord.builder(outputSchema)
+            .set(FILE_NAME, fileName)
+            .set(FULL_PATH, fullPath);
     addCredentialsToRecordBuilder(outputBuilder);
 
     return outputBuilder.build();
@@ -253,9 +240,8 @@ public class FileMetadata implements Comparable<FileMetadata> {
    * Compares the size of two files
    *
    * @param o The other file to compare to
-   * @return 1 if this instance is larger than the other file.
-   *         0 if this instance has the same size as the other file.
-   *        -1 if this instance is smaller than the other file.
+   * @return 1 if this instance is larger than the other file. 0 if this instance has the same size
+   *     as the other file. -1 if this instance is smaller than the other file.
    */
   @Override
   public int compareTo(FileMetadata o) {
@@ -277,6 +263,7 @@ public class FileMetadata implements Comparable<FileMetadata> {
 
   /**
    * Override this in extended class to return credential schema for different filesystems.
+   *
    * @return Credential schema for different filesystems
    */
   protected Schema getCredentialSchema() {
@@ -285,6 +272,7 @@ public class FileMetadata implements Comparable<FileMetadata> {
 
   /**
    * Override this in extended class to add credential information to StructuredRecord.
+   *
    * @param builder
    */
   protected void addCredentialsToRecordBuilder(StructuredRecord.Builder builder) {
