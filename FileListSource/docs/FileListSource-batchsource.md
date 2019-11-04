@@ -1,4 +1,4 @@
-# File Metadata Batch Source
+# File List Batch Source
 
 Description
 -----------
@@ -7,9 +7,7 @@ The File Metadata plugin is a source plugin that allows users to read file metad
 
 Use Case
 --------
-Use this source to extract the metadata of files under specified paths. The metadata can be passed to the
-S3FileCopySink and the files will be copied from a local filesystem to an Amazon S3 Filesystem.
-
+Use this source to extract the metadata of files under specified paths.
 
 Properties
 ----------
@@ -23,19 +21,10 @@ Properties
 
 Usage Notes
 -----------
-This source plugin only reads filemetadata from a local source filesystem. To copy files, pass its outputs to a FileCopySink of the destination Filesystem.
+This source plugin only reads fileName and fullPath from a local source filesystem.
 A StructuredRecord with the following schema is emitted for each file it reads.
 
 | Field                  | Type   | Description                                                                                                                                    |
 | :--------------------- | :----- | :-------------------------                                                                                                                     |
 | **fileName**           | String | Only contains the name of the file.                                                                                                            |
 | **fullPath**           | String | Contains the full path of the file in the source file system.                                                                                  |
-| **fileSize**           | long   | File size in bytes.                                                                                                                            |
-| **hostURI**            | String | The source filesystem's URI.                                                                                                                   |
-| **modificationTime**   | long   | The modification timestamp of the file.                                                                                                        |
-| **group**              | String | The group that the file belongs to.                                                                                                            |
-| **owner**              | String | The owner of the file.                                                                                                                         |
-| **isDir**              | Boolean| Whether or not the file is a directory.                                                                                                        |
-| **relativePath**       | String | The relative path is constructed by deleting the portion of the source path that comes before the last path separator ("/") from the full path.|
-| **permission**         | int    | The file's access permission                                                                                                                   |
-

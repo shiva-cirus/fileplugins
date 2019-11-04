@@ -34,26 +34,20 @@ public class FileListDataTest {
     FileListData metadata = new FileListData(fileStatus, sourcePath);
     Assert.assertEquals("123.txt", metadata.getFileName());
     Assert.assertEquals("/source/path/directory/123.txt", metadata.getFullPath());
-    Assert.assertEquals("directory/123.txt", metadata.getRelativePath());
-    Assert.assertEquals("hdfs://12.34.56.78/", metadata.getHostURI());
 
     // Copy a file that is part of a whole directory copy without including the directory
     sourcePath = "/source/path/";
     metadata = new FileListData(fileStatus, sourcePath);
     Assert.assertEquals("123.txt", metadata.getFileName());
     Assert.assertEquals("/source/path/directory/123.txt", metadata.getFullPath());
-    Assert.assertEquals("directory/123.txt", metadata.getRelativePath());
-    Assert.assertEquals("hdfs://12.34.56.78/", metadata.getHostURI());
 
     fileStatus.setPath(new Path("hdfs://12.34.56.78/"));
     sourcePath = "/";
     metadata = new FileListData(fileStatus, sourcePath);
-    Assert.assertTrue(metadata.getRelativePath().isEmpty());
 
     fileStatus.setPath(new Path("hdfs://12.34.56.78/abc.txt"));
     sourcePath = "/";
     metadata = new FileListData(fileStatus, sourcePath);
-    Assert.assertEquals("abc.txt", metadata.getRelativePath());
   }
 
   @Test
