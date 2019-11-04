@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "spec-version": "1.5"
+  },
+  "display-name": "Whole File Copier",
+  "configuration-groups": [
+    {
+      "label": "File Copy Configuration",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Reference Name",
+          "name": "referenceName"
+        },
+        {
+          "widget-type": "select",
+          "label": "Scheme",
+          "name": "scheme",
+          "widget-attributes": {
+            "values": [
+              "hdfs",
+              "file"
+            ],
+            "default": "file"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Base Path",
+          "name": "basePath"
+        },
+        {
+          "widget-type": "select",
+          "label": "Enable Overwrite",
+          "name": "enableOverwrite",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "false"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Preserve File Owner",
+          "name": "preserveFileOwner",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "false"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Buffer Size (MB)",
+          "name": "bufferSize",
+          "default": "1"
+        }
+      ]
+    }
+  ]
+}
