@@ -33,7 +33,7 @@ import java.util.List;
  * Abstract class that contains file metadata fields. Extend from this class to add credentials
  * specific to different filesystems.
  */
-public class FileMetadata implements Comparable<FileMetadata> {
+public class FileListData implements Comparable<FileListData> {
 
   public static final String FILE_NAME = "fileName";
   public static final String FILE_SIZE = "fileSize";
@@ -96,14 +96,14 @@ public class FileMetadata implements Comparable<FileMetadata> {
   private final String hostURI;
 
   /**
-   * Constructs a FileMetadata instance given a FileStatus and source path. Override this method to
+   * Constructs a FileListData instance given a FileStatus and source path. Override this method to
    * add additional credential fields to the instance.
    *
    * @param fileStatus The FileStatus object that contains raw file metadata for this object.
    * @param sourcePath The user specified path that was used to obtain this file.
    * @throws IOException
    */
-  public FileMetadata(FileStatus fileStatus, String sourcePath) throws IOException {
+  public FileListData(FileStatus fileStatus, String sourcePath) throws IOException {
     fileName = fileStatus.getPath().getName();
     fullPath = fileStatus.getPath().toUri().getPath();
     isDir = fileStatus.isDirectory();
@@ -135,12 +135,12 @@ public class FileMetadata implements Comparable<FileMetadata> {
   }
 
   /**
-   * Use this constructor to construct a FileMetadata from a StructuredRecord. Override this method
+   * Use this constructor to construct a FileListData from a StructuredRecord. Override this method
    * if additional credentials are contained in the structured record.
    *
    * @param record The StructuredRecord instance to convert from.
    */
-  public FileMetadata(StructuredRecord record) {
+  public FileListData(StructuredRecord record) {
     this.fileName = record.get(FILE_NAME);
     this.fullPath = record.get(FULL_PATH);
     this.modificationTime = record.get(MODIFICATION_TIME);
@@ -158,7 +158,7 @@ public class FileMetadata implements Comparable<FileMetadata> {
    *
    * @param dataInput The input stream to deserialize from.
    */
-  public FileMetadata(DataInput dataInput) throws IOException {
+  public FileListData(DataInput dataInput) throws IOException {
     this.fileName = dataInput.readUTF();
     this.fullPath = dataInput.readUTF();
     this.modificationTime = dataInput.readLong();
@@ -244,7 +244,7 @@ public class FileMetadata implements Comparable<FileMetadata> {
    *     as the other file. -1 if this instance is smaller than the other file.
    */
   @Override
-  public int compareTo(FileMetadata o) {
+  public int compareTo(FileListData o) {
     return Long.compare(fileSize, o.getFileSize());
   }
 

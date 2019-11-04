@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class FileMetadataTest {
+public class FileListDataTest {
   @Test
   public void testRelativePathParsing() throws IOException {
     FileStatus fileStatus = new FileStatus();
@@ -31,7 +31,7 @@ public class FileMetadataTest {
 
     // Copy a file that is part of a whole directory copy
     String sourcePath = "/source/path/directory";
-    FileMetadata metadata = new FileMetadata(fileStatus, sourcePath);
+    FileListData metadata = new FileListData(fileStatus, sourcePath);
     Assert.assertEquals("123.txt", metadata.getFileName());
     Assert.assertEquals("/source/path/directory/123.txt", metadata.getFullPath());
     Assert.assertEquals("directory/123.txt", metadata.getRelativePath());
@@ -39,7 +39,7 @@ public class FileMetadataTest {
 
     // Copy a file that is part of a whole directory copy without including the directory
     sourcePath = "/source/path/";
-    metadata = new FileMetadata(fileStatus, sourcePath);
+    metadata = new FileListData(fileStatus, sourcePath);
     Assert.assertEquals("123.txt", metadata.getFileName());
     Assert.assertEquals("/source/path/directory/123.txt", metadata.getFullPath());
     Assert.assertEquals("directory/123.txt", metadata.getRelativePath());
@@ -47,12 +47,12 @@ public class FileMetadataTest {
 
     fileStatus.setPath(new Path("hdfs://12.34.56.78/"));
     sourcePath = "/";
-    metadata = new FileMetadata(fileStatus, sourcePath);
+    metadata = new FileListData(fileStatus, sourcePath);
     Assert.assertTrue(metadata.getRelativePath().isEmpty());
 
     fileStatus.setPath(new Path("hdfs://12.34.56.78/abc.txt"));
     sourcePath = "/";
-    metadata = new FileMetadata(fileStatus, sourcePath);
+    metadata = new FileListData(fileStatus, sourcePath);
     Assert.assertEquals("abc.txt", metadata.getRelativePath());
   }
 
@@ -64,11 +64,11 @@ public class FileMetadataTest {
     final String basePath = "/abc";
 
     // generate 3 files with different file sizes
-    FileMetadata file1 = new FileMetadata(statusA, basePath);
+    FileListData file1 = new FileListData(statusA, basePath);
 
-    FileMetadata file2 = new FileMetadata(statusB, basePath);
+    FileListData file2 = new FileListData(statusB, basePath);
 
-    FileMetadata file3 = new FileMetadata(statusC, basePath);
+    FileListData file3 = new FileListData(statusC, basePath);
 
     Assert.assertEquals(-1, file1.compareTo(file2));
     Assert.assertEquals(0, file3.compareTo(file2));

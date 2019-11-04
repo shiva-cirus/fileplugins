@@ -23,13 +23,13 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class MetadataInputSplitTest {
+public class FileListInputSplitTest {
 
     @Test
     public void testCompare() throws IOException {
-        MetadataInputSplit metadataInputSplita = new MetadataInputSplit();
-        MetadataInputSplit metadataInputSplitb = new MetadataInputSplit();
-        MetadataInputSplit metadataInputSplitc = new MetadataInputSplit();
+        FileListInputSplit metadataInputSplita = new FileListInputSplit();
+        FileListInputSplit metadataInputSplitb = new FileListInputSplit();
+        FileListInputSplit metadataInputSplitc = new FileListInputSplit();
 
         final FileStatus statusA = new FileStatus(1, false, 0, 0, 0, new Path("hdfs://hello.com/abc/fileA"));
         final FileStatus statusB = new FileStatus(2, false, 0, 0, 0, new Path("hdfs://hello.com/abc/fileB"));
@@ -37,11 +37,11 @@ public class MetadataInputSplitTest {
         final String basePath = "/abc";
 
         // generate 3 files with different file sizes
-        FileMetadata file1 = new FileMetadata(statusA, basePath);
+        FileListData file1 = new FileListData(statusA, basePath);
 
-        FileMetadata file2 = new FileMetadata(statusB, basePath);
+        FileListData file2 = new FileListData(statusB, basePath);
 
-        FileMetadata file3 = new FileMetadata(statusC, basePath);
+        FileListData file3 = new FileListData(statusC, basePath);
 
         // a has 3 bytes
         metadataInputSplita.addFileMetadata(file1);

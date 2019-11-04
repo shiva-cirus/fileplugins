@@ -27,12 +27,12 @@ import java.io.IOException;
  * Returns key that contains file path.
  * Returns value that contains file metadata.
  */
-public class MetadataRecordReader extends RecordReader<NullWritable, FileMetadata> {
+public class FileListRecordReader extends RecordReader<NullWritable, FileListData> {
 
-  protected MetadataInputSplit split;
+  protected FileListInputSplit split;
   private int currentIndex;
 
-  public MetadataRecordReader() {
+  public FileListRecordReader() {
     super();
   }
 
@@ -60,12 +60,12 @@ public class MetadataRecordReader extends RecordReader<NullWritable, FileMetadat
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
     throws IOException, InterruptedException {
-    this.split = (MetadataInputSplit) inputSplit;
+    this.split = (FileListInputSplit) inputSplit;
     this.currentIndex = -1;
   }
 
   @Override
-  public FileMetadata getCurrentValue() throws IOException, InterruptedException {
+  public FileListData getCurrentValue() throws IOException, InterruptedException {
     return split.getFileMetaDataList().get(currentIndex);
   }
 
