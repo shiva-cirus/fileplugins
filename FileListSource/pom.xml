@@ -19,9 +19,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <name>FileList Plugins</name>
+  <name>FileListSource Plugins</name>
   <groupId>io.cdap.plugin</groupId>
-  <artifactId>FileList</artifactId>
+  <artifactId>FileListSource</artifactId>
   <version>1.2.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
