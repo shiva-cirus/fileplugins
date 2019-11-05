@@ -1,0 +1,113 @@
+{
+  "metadata": {
+    "spec-version": "1.0"
+  },
+  "configuration-groups": [
+    {
+      "label": "Compressor",
+      "properties": [
+        {
+          "widget-type": "keyvalue-dropdown",
+          "label": "Compress Fields",
+          "name": "compressor",
+          "widget-attributes": {
+            "showDelimiter": "false",
+            "dropdownOptions": [
+              "SNAPPY",
+              "ZIP",
+              "GZIP",
+              "NONE"
+            ],
+            "key-placeholder": "Field Name"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Compressor",
+      "properties": [
+        {
+          "widget-type": "dataset-selector",
+          "label": "Table Name",
+          "name": "tableName"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Project ID",
+          "name": "project",
+          "widget-attributes": {
+            "default": "auto-detect"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Path",
+          "name": "path",
+          "widget-attributes": {
+            "placeholder": "gs://<bucket>/path/to/output"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Path Suffix",
+          "name": "suffix",
+          "widget-attributes": {
+            "default": "yyyy-MM-dd-HH-mm"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Format",
+          "name": "format",
+          "widget-attributes": {
+            "values": [
+              "avro",
+              "csv",
+              "delimited",
+              "json",
+              "orc",
+              "parquet",
+              "tsv"
+            ],
+            "default": "json"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Delimiter",
+          "name": "delimiter",
+          "widget-attributes": {
+            "placeholder": "Delimiter if the format is 'delimited'"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Credentials",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Service Account File Path",
+          "name": "serviceFilePath",
+          "widget-attributes": {
+            "default": "auto-detect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Auto Create",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Location",
+          "name": "location",
+          "widget-attributes": {
+            "default": "us"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": []
+}
