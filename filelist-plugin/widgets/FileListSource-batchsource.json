@@ -2,10 +2,10 @@
   "metadata": {
     "spec-version": "1.5"
   },
-  "display-name": "File Metadata Capturer",
+  "display-name": "File List Capturer",
   "configuration-groups": [
     {
-      "label": "File Metadata Configuration",
+      "label": "File List Configuration",
       "properties": [
         {
           "widget-type": "textbox",
