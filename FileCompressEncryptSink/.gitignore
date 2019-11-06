@@ -100,5 +100,6 @@ buildNumber.properties
 .env.local
 *.iml
 .mvn/wrapper/maven-wrapper.jar
+rugged-alloy-254904-08590d697da8.json
 
 
