@@ -56,12 +56,12 @@ import java.util.zip.ZipOutputStream;
  * Compresses the configured fields using the algorithms specified.
  */
 @Plugin(type = SparkSink.PLUGIN_TYPE)
-@Name(CompressorSink.NAME)
+@Name(CompressorEncryptorSink.NAME)
 @Description("Compresses configured fields using the algorithms specified.")
-public final class CompressorSink extends SparkSink<StructuredRecord> {
-    private static final Logger LOG = LoggerFactory.getLogger(CompressorSink.class);
+public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
+    private static final Logger LOG = LoggerFactory.getLogger(CompressorEncryptorSink.class);
     private final Config config;
-    public static final String NAME = "CompressorSink";
+    public static final String NAME = "CompressorEncryptorSink";
 
     // Output Schema associated with transform output.
     private Schema outSchema;
@@ -73,7 +73,7 @@ public final class CompressorSink extends SparkSink<StructuredRecord> {
 
 
     // This is used only for tests, otherwise this is being injected by the ingestion framework.
-    public CompressorSink(Config config) {
+    public CompressorEncryptorSink(Config config) {
         this.config = config;
     }
 
@@ -247,18 +247,18 @@ public final class CompressorSink extends SparkSink<StructuredRecord> {
     }
 
     private void getFileStorage(SparkExecutionPluginContext context) {
-            String cmekKey = context.getArguments().get(GCPUtils.CMEK_KEY);
-            Credentials credentials = null;
-            try {
-                credentials = config.getServiceAccountFilePath() == null ?
-                        null : GCPUtils.loadServiceAccountCredentials(config.getServiceAccountFilePath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Storage storage = GCPUtils.getStorage(config.getProject(), credentials);
-            if (storage.get(config.getBucket()) == null) {
-                GCPUtils.createBucket(storage, config.getBucket(), config.getLocation(), cmekKey);
-            }
+        String cmekKey = context.getArguments().get(GCPUtils.CMEK_KEY);
+        Credentials credentials = null;
+        try {
+            credentials = config.getServiceAccountFilePath() == null ?
+                    null : GCPUtils.loadServiceAccountCredentials(config.getServiceAccountFilePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Storage storage = GCPUtils.getStorage(config.getProject(), credentials);
+        if (storage.get(config.getBucket()) == null) {
+            GCPUtils.createBucket(storage, config.getBucket(), config.getLocation(), cmekKey);
+        }
 
     }
 
