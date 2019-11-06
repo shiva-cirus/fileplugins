@@ -16,10 +16,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** Simple class for creating, reading and modifying text blobs on Google Cloud */
 public class GoogleCloudStoragePOC {
-  private static final Logger log =
-      LoggerFactory.getLogger(GoogleCloudStoragePOC.class);
+  private static final Logger log = LoggerFactory.getLogger(GoogleCloudStoragePOC.class);
   private static Storage storage;
   private Bucket bucket;
+  public static String encryptionKey ="";
 
   public static void main(String[] args) throws Exception {
 
@@ -42,32 +42,40 @@ public class GoogleCloudStoragePOC {
 
     uploadToStorage(gzipInputStream(inputStream), blobInfo);
   }
+
   private static InputStream gzipInputStream(InputStream inputStream) throws IOException {
     PipedInputStream inPipe = new PipedInputStream();
     PipedOutputStream outPipe = new PipedOutputStream(inPipe);
     new Thread(
             () -> {
-              try(OutputStream outZip = new GZIPOutputStream(outPipe)){
+              try (OutputStream outZip = new GZIPOutputStream(outPipe)) {
                 IOUtils.copy(inputStream, outZip);
               } catch (IOException e) {
                 e.printStackTrace();
               }
-            }
-    ).start();
+            })
+        .start();
     return inPipe;
   }
+
   private static void uploadToStorage(InputStream fileInputStream, BlobInfo blobInfo)
       throws IOException {
+    try {
+      encryptionKey = FileEncrptKeyUtil.getEncyptedKey();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
     // For big files:
     // When content is not available or large (1MB or more) it is recommended to write it in chunks
     // via the blob's channel writer.
-    try (WriteChannel writer = storage.writer(blobInfo)) {
-
+    try (WriteChannel writer =
+        storage.writer(blobInfo, Storage.BlobWriteOption.encryptionKey(encryptionKey))) {
       byte[] buffer = new byte[10_240];
       try (InputStream input = fileInputStream) {
         int limit;
         while ((limit = input.read(buffer)) >= 0) {
+          System.out.println("upload file " + limit);
           writer.write(ByteBuffer.wrap(buffer, 0, limit));
         }
       }
@@ -75,6 +83,7 @@ public class GoogleCloudStoragePOC {
   }
   // Use path and project name
   private GoogleCloudStoragePOC(String pathToConfig, String projectId) throws IOException {
+
     Credentials credentials = GoogleCredentials.fromStream(new FileInputStream(pathToConfig));
     storage =
         StorageOptions.newBuilder()
