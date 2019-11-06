@@ -17,12 +17,12 @@
 package io.cdap.plugin.file.ingest.compress;
 
 import com.google.auth.Credentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.Tuple;
 import com.google.cloud.WriteChannel;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.*;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -37,7 +37,9 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.SparkExecutionPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkSink;
+import org.apache.commons.io.IOUtils;
 import org.apache.spark.api.java.JavaRDD;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,8 +61,11 @@ import java.util.zip.ZipOutputStream;
 @Name(CompressorEncryptorSink.NAME)
 @Description("Compresses configured fields using the algorithms specified.")
 public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
+
     private static final Logger LOG = LoggerFactory.getLogger(CompressorEncryptorSink.class);
-    private final Config config;
+
+    private Config config = null;
+
     public static final String NAME = "CompressorEncryptorSink";
 
     // Output Schema associated with transform output.
@@ -70,6 +75,8 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     private Map<String, Schema.Type> outSchemaMap = new HashMap<>();
 
     private final Map<String, CompressorType> compMap = new HashMap<>();
+
+    private static Storage storage;
 
 
     // This is used only for tests, otherwise this is being injected by the ingestion framework.
@@ -164,7 +171,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
 
     @Override
-    public void run(SparkExecutionPluginContext context, JavaRDD<StructuredRecord> javaRDD) throws Exception {
+    public void run(SparkExecutionPluginContext context, JavaRDD<StructuredRecord> javaRDD) {
         LOG.info("Schema and filds are: " + config.compressor);
         String fieldName = null;
         if (config.compressor != null) {
@@ -172,20 +179,44 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             fieldName = split[0];
         }
 
+        storage = getGoogleStorage();
         String finalFieldName = fieldName;
+
+
+
+        Bucket bucket = getBucket();
+
+        // Save a simple string
+        // BlobId blobId = googleCloudStorage.saveString("pkg", "Hi there!", bucket);
+
 
         javaRDD.foreach(st -> {
 
             String fileName = st.get(finalFieldName);
             String outFileName = null;
-            if (fileName != null) {
-                outFileName = fileName + ".gz";
+            File file = new File(fileName);
+            if (file != null) {
+                outFileName =  file.getName() + ".gz.enc";
             }
 
+            BlobId blobId = BlobId.of(bucket.getName(), outFileName);
 
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
+
+            Class<? extends CompressorEncryptorSink> clazz = this.getClass();
+
+            InputStream inputStream = clazz.getResourceAsStream(fileName);
+
+
+            uploadToStorage(encryptInputStream(gzipInputStream(inputStream)), blobInfo);;
+
+
+
+
+
+
+            /*try {
             String name = fileName;
-
-            try {
                 byte[] buffer = new byte[2048];
 
                 FileOutputStream fileOutputStream = new FileOutputStream(outFileName);
@@ -232,14 +263,84 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
                 System.out.println("The file was compressed successfully!");
 
 
-
             } catch (IOException ex) {
                 ex.printStackTrace();
-            }
+            }*/
 
         });
 
 
+    }
+
+
+
+    private Storage getGoogleStorage() {
+        Credentials credentials = null;
+        try {
+            credentials = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Storage storage = StorageOptions.newBuilder()
+                .setCredentials(credentials)
+                .setProjectId(config.project)
+                .build()
+                .getService();
+
+        return storage;
+
+    }
+
+    private static InputStream gzipInputStream(InputStream inputStream) throws IOException {
+        PipedInputStream inPipe = new PipedInputStream();
+        PipedOutputStream outPipe = new PipedOutputStream(inPipe);
+        new Thread(
+                () -> {
+                    try(OutputStream outZip = new GZIPOutputStream(outPipe)){
+                        IOUtils.copy(inputStream, outZip);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+        ).start();
+        return inPipe;
+    }
+
+    private static InputStream encryptInputStream(InputStream inputStream) throws IOException {
+        PipedInputStream inPipe = new PipedInputStream();
+        PipedOutputStream outPipe = new PipedOutputStream(inPipe);
+        DataOutputStream dataOutputStream = new DataOutputStream(outPipe);
+        new Thread(
+                () -> {
+                    FileEncryptTest outZip = new FileEncryptTest(outPipe);
+                    try {
+                        IOUtils.copy(inputStream, dataOutputStream);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+        ).start();
+        return inPipe;
+    }
+
+    private static void uploadToStorage(InputStream fileInputStream, BlobInfo blobInfo)
+            throws IOException {
+
+        // For big files:
+        // When content is not available or large (1MB or more) it is recommended to write it in chunks
+        // via the blob's channel writer.
+        try (WriteChannel writer = storage.writer(blobInfo)) {
+
+            byte[] buffer = new byte[10_240];
+            try (InputStream input = fileInputStream) {
+                int limit;
+                while ((limit = input.read(buffer)) >= 0) {
+                    writer.write(ByteBuffer.wrap(buffer, 0, limit));
+                }
+            }
+        }
     }
 
     private FileOutputStream compressEncript(FileInputStream fis, CompressorType type, String publicKey) throws FileNotFoundException {
@@ -337,6 +438,15 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         }
     }
 
+    private Bucket getBucket() {
+        String bucketName = config.path;
+        Bucket bucket = storage.get(bucketName);
+        if (bucket == null) {
+            System.out.println("Creating new bucket.");
+            bucket = storage.create(BucketInfo.of(bucketName));
+        }
+        return bucket;
+    }
 
 
     /**
@@ -357,7 +467,12 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         private static final String NAME_SUFFIX = "suffix";
         private static final String NAME_FORMAT = "format";
         private static final String NAME_SCHEMA = "schema";
+        private static final String NAME_DELIMITER = "delimiter";
         private static final String NAME_LOCATION = "location";
+        public static final String NAME_PROJECT = "project";
+        public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
+        public static final String AUTO_DETECT = "auto-detect";
+
 
         private static final String SCHEME = "gs://";
         @Name(NAME_PATH)
@@ -365,6 +480,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         @Macro
         private String path;
 
+        @Name(NAME_SUFFIX)
         @Description("The time format for the output directory that will be appended to the path. " +
                 "For example, the format 'yyyy-MM-dd-HH-mm' will result in a directory of the form '2015-01-01-20-42'. " +
                 "If not specified, nothing will be appended to the path.")
@@ -372,16 +488,20 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         @Macro
         private String suffix;
 
+        @Name(NAME_FORMAT)
         @Description("The format to write in. The format must be one of 'json', 'avro', 'parquet', 'csv', 'tsv', "
                 + "or 'delimited'.")
         protected String format;
 
+
+        @Name(NAME_DELIMITER)
         @Description("The delimiter to use if the format is 'delimited'. The delimiter will be ignored if the format "
                 + "is anything other than 'delimited'.")
         @Macro
         @Nullable
         private String delimiter;
 
+        @Name(NAME_SCHEMA)
         @Description("The schema of the data to write. The 'avro' and 'parquet' formats require a schema but other "
                 + "formats do not.")
         @Macro
@@ -394,6 +514,22 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         @Description("The location where the gcs bucket will get created. " +
                 "This value is ignored if the bucket already exists")
         protected String location;
+
+        @Name(NAME_PROJECT)
+        @Description("Google Cloud Project ID, which uniquely identifies a project. "
+                + "It can be found on the Dashboard in the Google Cloud Platform Console.")
+        @Macro
+        @Nullable
+        protected String project;
+
+        @Name(NAME_SERVICE_ACCOUNT_FILE_PATH)
+        @Description("Path on the local file system of the service account key used "
+                + "for authorization. Can be set to 'auto-detect' when running on a Dataproc cluster. "
+                + "When running on other clusters, the file must be present on every node in the cluster.")
+        @Macro
+        @Nullable
+        protected String serviceFilePath;
+
 
 
 
@@ -456,25 +592,6 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             this.location = location;
         }
 
-        public static final String NAME_PROJECT = "project";
-        public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
-        public static final String AUTO_DETECT = "auto-detect";
-
-        @Name(NAME_PROJECT)
-        @Description("Google Cloud Project ID, which uniquely identifies a project. "
-                + "It can be found on the Dashboard in the Google Cloud Platform Console.")
-        @Macro
-        @Nullable
-        protected String project;
-
-        @Name(NAME_SERVICE_ACCOUNT_FILE_PATH)
-        @Description("Path on the local file system of the service account key used "
-                + "for authorization. Can be set to 'auto-detect' when running on a Dataproc cluster. "
-                + "When running on other clusters, the file must be present on every node in the cluster.")
-        @Macro
-        @Nullable
-        protected String serviceFilePath;
-
         public String getProject() {
             String projectId = tryGetProject();
             if (projectId == null) {
@@ -521,6 +638,19 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
                 }
             }
             return false;
+        }
+
+        public Config(String compressor, String tableName, String path, @Nullable String suffix, String format, @Nullable String delimiter, @Nullable String schema, @Nullable String location, @Nullable String project, @Nullable String serviceFilePath) {
+            this.compressor = compressor;
+            this.tableName = tableName;
+            this.path = path;
+            this.suffix = suffix;
+            this.format = format;
+            this.delimiter = delimiter;
+            this.schema = schema;
+            this.location = location;
+            this.project = project;
+            this.serviceFilePath = serviceFilePath;
         }
     }
 

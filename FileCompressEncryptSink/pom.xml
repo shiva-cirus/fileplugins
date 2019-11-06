@@ -84,6 +84,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpg-jdk15on</artifactId>
+      <version>1.58</version>
+    </dependency>
+    <!--<dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-crypto</artifactId>
       <version>1.0.0</version>
@@ -92,7 +97,7 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>1.19</version>
-    </dependency>
+    </dependency>-->
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>

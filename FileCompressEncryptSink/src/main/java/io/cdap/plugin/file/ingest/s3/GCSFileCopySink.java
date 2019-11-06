@@ -32,13 +32,13 @@ import org.apache.hadoop.fs.s3native.NativeS3FileSystem;
  * FileCopySink that writes to S3.
  */
 @Plugin(type = BatchSink.PLUGIN_TYPE)
-@Name("S3FileCopySink")
+@Name("GCSFileCopySink")
 @Description("Copies files from remote filesystem to S3 Filesystem")
-public class S3FileCopySink extends AbstractFileCopySink {
+public class GCSFileCopySink extends AbstractFileCopySink {
 
   private S3FileCopySinkConfig config;
 
-  public S3FileCopySink(S3FileCopySinkConfig config) {
+  public GCSFileCopySink(S3FileCopySinkConfig config) {
     super(config);
     this.config = config;
   }
