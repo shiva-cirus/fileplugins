@@ -1,15 +1,18 @@
-package io.cdap.plugin.file.ingest;
+package test;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import org.apache.commons.io.IOUtils;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -32,15 +35,11 @@ public class GoogleCloudStoragePOC {
     // Bucket require globally unique names, so you'll probably need to change this
     Bucket bucket = googleCloudStorage.getBucket("pkg_test");
 
-    // Save a simple string
-    // BlobId blobId = googleCloudStorage.saveString("pkg", "Hi there!", bucket);
-    BlobId blobId = BlobId.of("pkg_test", "pkg1.csv.gz");
-
-    BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
     Class clazz = GoogleCloudStoragePOC.class;
     InputStream inputStream = clazz.getResourceAsStream("/1.csv");
-
-    uploadToStorage(gzipInputStream(inputStream), blobInfo);
+    uploadToStorageApproach1(gzipInputStream(inputStream));
+    uploadToStorageApproach2(gzipInputStream(inputStream));
+    uploadToStorageApproach3(gzipInputStream(inputStream));
   }
 
   private static InputStream gzipInputStream(InputStream inputStream) throws IOException {
@@ -58,8 +57,11 @@ public class GoogleCloudStoragePOC {
     return inPipe;
   }
 
-  private static void uploadToStorage(InputStream fileInputStream, BlobInfo blobInfo)
-      throws IOException {
+  private static void uploadToStorageApproach1(InputStream fileInputStream)
+          throws IOException {
+    BlobId blobId = BlobId.of("pkg_test", "approach1.csv.gz");
+
+    BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
     try {
       encryptionKey = FileEncrptKeyUtil.getEncyptedKey();
     } catch (Exception e) {
@@ -70,7 +72,7 @@ public class GoogleCloudStoragePOC {
     // When content is not available or large (1MB or more) it is recommended to write it in chunks
     // via the blob's channel writer.
     try (WriteChannel writer =
-        storage.writer(blobInfo, Storage.BlobWriteOption.encryptionKey(encryptionKey))) {
+                 storage.writer(blobInfo, Storage.BlobWriteOption.encryptionKey(encryptionKey))) {
       byte[] buffer = new byte[10_240];
       try (InputStream input = fileInputStream) {
         int limit;
@@ -81,6 +83,68 @@ public class GoogleCloudStoragePOC {
       }
     }
   }
+
+  private static void uploadToStorageApproach2(InputStream fileInputStream)
+          throws IOException {
+    BlobId blobId = BlobId.of("pkg_test", "approach2.csv.gz");
+
+    BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
+    String privateKeyPassword = "passphrase";
+    ByteArrayOutputStream byteArrayOutputStream=null;
+    try {
+      File publicKeyFile = new File("PGP1D0.pkr");
+      PGPPublicKey pgpPublicKey = FileEncryptTest.readPublicKeyFromCol(new FileInputStream(publicKeyFile));
+      char[] passPhrase = privateKeyPassword.toCharArray();
+      String inputFileName =
+              "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileCompressEncryptSink/src/main/resources/1.csv";
+      byteArrayOutputStream= FileEncryptTest.encryptFile(inputFileName,pgpPublicKey,passPhrase,false,true);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    InputStream targetStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray());
+    // For big files:
+    // When content is not available or large (1MB or more) it is recommended to write it in chunks
+    // via the blob's channel writer.
+    try (WriteChannel writer =
+                 storage.writer(blobInfo)) {
+      byte[] buffer = new byte[10_240];
+      try (InputStream input = targetStream) {
+        int limit;
+        while ((limit = input.read(buffer)) >= 0) {
+          System.out.println("upload file " + limit);
+          writer.write(ByteBuffer.wrap(buffer, 0, limit));
+        }
+      }
+    }
+  }
+  private static void uploadToStorageApproach3(InputStream fileInputStream)
+          throws IOException {
+    BlobId blobId = BlobId.of("pkg_test", "approach3.csv.gz");
+
+    BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
+    try {
+      PGPSecretKey pgpSecretKey = FileEncrptKeyUtil.getPGPKey();
+      encryptionKey = Base64.getEncoder().encodeToString(pgpSecretKey.getPublicKey().getEncoded());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    // For big files:
+    // When content is not available or large (1MB or more) it is recommended to write it in chunks
+    // via the blob's channel writer.
+    try (WriteChannel writer =
+                 storage.writer(blobInfo, Storage.BlobWriteOption.encryptionKey(encryptionKey))) {
+      byte[] buffer = new byte[10_240];
+      try (InputStream input = fileInputStream) {
+        int limit;
+        while ((limit = input.read(buffer)) >= 0) {
+          System.out.println("upload file " + limit);
+          writer.write(ByteBuffer.wrap(buffer, 0, limit));
+        }
+      }
+    }
+  }
+
   // Use path and project name
   private GoogleCloudStoragePOC(String pathToConfig, String projectId) throws IOException {
 

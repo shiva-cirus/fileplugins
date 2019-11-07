@@ -1,4 +1,4 @@
-package io.cdap.plugin.file.ingest;
+package test;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -33,7 +33,7 @@ public class FileEncrptKeyUtil {
     return encryption_key;
   }
 
-  public static String getPGPKey()
+  public static PGPSecretKey getPGPKey()
       throws IOException, NoSuchProviderException, PGPException, NoSuchAlgorithmException {
 
     Security.addProvider(new BouncyCastleProvider());
@@ -60,6 +60,6 @@ public class FileEncrptKeyUtil {
                 .setProvider("BC")
                 .build(privateKeyPassword.toCharArray()));
 
-    return Base64.getEncoder().encodeToString(secretKey.getEncoded());
+    return secretKey;
   }
 }
