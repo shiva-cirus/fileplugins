@@ -20,17 +20,17 @@
             ],
             "key-placeholder": "Field Name"
           }
-        }
-      ]
-    },
-    {
-      "label": "Compressor",
-      "properties": [
+        },
         {
           "widget-type": "dataset-selector",
           "label": "Table Name",
           "name": "tableName"
-        },
+        }
+      ]
+    },
+    {
+      "label": "Google Cloud Stogare Parameters",
+      "properties": [
         {
           "widget-type": "textbox",
           "label": "Project ID",
@@ -83,7 +83,7 @@
       ]
     },
     {
-      "label": "Credentials",
+      "label": "Google Cloud Storage Credentials",
       "properties": [
         {
           "widget-type": "textbox",
@@ -94,20 +94,8 @@
           }
         }
       ]
-    },
-    {
-      "label": "Auto Create",
-      "properties": [
-        {
-          "widget-type": "textbox",
-          "label": "Location",
-          "name": "location",
-          "widget-attributes": {
-            "default": "us"
-          }
-        }
-      ]
     }
+
   ],
   "outputs": []
 }
