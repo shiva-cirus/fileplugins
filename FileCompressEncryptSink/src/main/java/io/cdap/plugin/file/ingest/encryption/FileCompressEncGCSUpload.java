@@ -194,7 +194,7 @@ public class FileCompressEncGCSUpload {
         }
     }
 
-    private static void dec(String inFile) throws IOException, NoSuchProviderException {
+    private static void decryption(String inFile) throws IOException, NoSuchProviderException {
         String privateKeyPassword = "passphrase";
         decryptFile(inFile, "PGP1D0.skr", privateKeyPassword.toCharArray(), "abc11.txt");
     }
@@ -249,7 +249,7 @@ public class FileCompressEncGCSUpload {
         return inPipe;
     }
 
-    private static void encWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
+    private static void encryptionCompressAndUploadGCSWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
 
 
         PGPPublicKey encKey = PGPExampleUtil.readPublicKey("PGP1D0.pkr");
@@ -296,10 +296,15 @@ public class FileCompressEncGCSUpload {
 
         //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
 
-        //encWithThread("input/pkg1_vikas.csv" , "cdap_vikas", "approach_withTherad_pkg1_vikas.csv.asc");
+        String inFileName = "/Users/vikaskumar/Documents/cp.csv";
+        String bucketName = "cdap_vikas";
+        String uploadFileName = "largefile_2gb_cp.asc";
 
-        dec("/Users/vikaskumar/Downloads/approach_withTherad_pkg1_vikas.csv.asc");
-        //dec("output/pkg2_vikas.csv.asc");
+        encryptionCompressAndUploadGCSWithThread(inFileName, bucketName, uploadFileName);
+
+
+        decryption("/Users/vikaskumar/Downloads/largefile_2gb_cp.asc");
+        //decryption("output/pkg2_vikas.csv.asc");
 
     }
 }
