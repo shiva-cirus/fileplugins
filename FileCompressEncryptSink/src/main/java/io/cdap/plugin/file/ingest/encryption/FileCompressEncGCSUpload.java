@@ -101,7 +101,7 @@ public class FileCompressEncGCSUpload {
                 throw new IllegalArgumentException("secret key for message not found.");
             }
 
-            InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(sKey));
+            InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(sKey));
 
             JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
 
@@ -164,9 +164,9 @@ public class FileCompressEncGCSUpload {
 
         try
         {
-            PGPEncryptedDataGenerator   cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
+            PGPEncryptedDataGenerator   cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(new BouncyCastleProvider()));
 
-            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider("BC"));
+            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider(new BouncyCastleProvider()));
 
             OutputStream                cOut = cPk.open(out, new byte[1 << 16]);
 
@@ -221,7 +221,7 @@ public class FileCompressEncGCSUpload {
         return var1;
     }
 
-    private static InputStream gcsWriter( String inFileName, PGPPublicKey encKey) throws IOException {
+    public static InputStream gcsWriter( String inFileName, PGPPublicKey encKey) throws IOException {
         //InputStream inputStream = new FileInputStream(inFileName);
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
@@ -231,11 +231,11 @@ public class FileCompressEncGCSUpload {
                 () -> {
                     try {
                         encryptFile(outPipe, inFileName, encKey, false, true);
-                        Thread.sleep(10000);
+                        //Thread.sleep(10000);
                         //outPipe.close();
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } catch (NoSuchProviderException | InterruptedException e) {
+                    } catch (NoSuchProviderException e) {
                         e.printStackTrace();
                     } finally {
                         try {
@@ -249,7 +249,7 @@ public class FileCompressEncGCSUpload {
         return inPipe;
     }
 
-    private static void encryptionCompressAndUploadGCSWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
+    public static void encryptionCompressAndUploadGCSWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
 
 
         PGPPublicKey encKey = PGPExampleUtil.readPublicKey("PGP1D0.pkr");
@@ -257,11 +257,11 @@ public class FileCompressEncGCSUpload {
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
         InputStream inputStream = gcsWriter( inFileName, encKey);
-        try {
+        /*try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         byte[] buffer = new byte[INT];
         try (WriteChannel writer =
                      storage.writer(blobInfo)) {
@@ -296,14 +296,14 @@ public class FileCompressEncGCSUpload {
 
         //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
 
-        String inFileName = "/Users/vikaskumar/Documents/cp.csv";
+        String inFileName = "input/pkg1_vikas.csv";
         String bucketName = "cdap_vikas";
-        String uploadFileName = "largefile_2gb_cp.asc";
+        String uploadFileName = "pkg1_vikas.csv.asc";
 
         encryptionCompressAndUploadGCSWithThread(inFileName, bucketName, uploadFileName);
 
 
-        decryption("/Users/vikaskumar/Downloads/largefile_2gb_cp.asc");
+        //decryption("/Users/vikaskumar/Downloads/largefile_2gb_cp.asc");
         //decryption("output/pkg2_vikas.csv.asc");
 
     }

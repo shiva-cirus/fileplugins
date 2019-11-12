@@ -59,7 +59,7 @@ public class PGPExampleUtil
         return pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(pass));
     }
 
-    static PGPPublicKey readPublicKey(String fileName) throws IOException, PGPException
+    public static PGPPublicKey readPublicKey(String fileName) throws IOException, PGPException
     {
         InputStream keyIn = new BufferedInputStream(new FileInputStream(fileName));
         PGPPublicKey pubKey = readPublicKey(keyIn);
