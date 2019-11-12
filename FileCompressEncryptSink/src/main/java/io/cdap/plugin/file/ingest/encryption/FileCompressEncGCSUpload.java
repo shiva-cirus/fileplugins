@@ -222,7 +222,6 @@ public class FileCompressEncGCSUpload {
     }
 
     private static InputStream gcsWriter( String inFileName, PGPPublicKey encKey) throws IOException {
-        //InputStream inputStream = new FileInputStream(inFileName);
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
         inPipe.connect(outPipe);
@@ -231,11 +230,9 @@ public class FileCompressEncGCSUpload {
                 () -> {
                     try {
                         encryptFile(outPipe, inFileName, encKey, false, true);
-                        Thread.sleep(10000);
-                        //outPipe.close();
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } catch (NoSuchProviderException | InterruptedException e) {
+                    } catch (NoSuchProviderException  e) {
                         e.printStackTrace();
                     } finally {
                         try {
@@ -257,11 +254,6 @@ public class FileCompressEncGCSUpload {
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
         InputStream inputStream = gcsWriter( inFileName, encKey);
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         byte[] buffer = new byte[INT];
         try (WriteChannel writer =
                      storage.writer(blobInfo)) {
@@ -296,14 +288,14 @@ public class FileCompressEncGCSUpload {
 
         //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
 
-        String inFileName = "/Users/vikaskumar/Documents/cp.csv";
-        String bucketName = "cdap_vikas";
-        String uploadFileName = "largefile_2gb_cp.asc";
+        String inFileName =  "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileCompressEncryptSink/src/main/resources/1.csv";
+        String bucketName = "pkg_test";
+        String uploadFileName = "12.csv.gz";
 
         encryptionCompressAndUploadGCSWithThread(inFileName, bucketName, uploadFileName);
 
 
-        decryption("/Users/vikaskumar/Downloads/largefile_2gb_cp.asc");
+        decryption("/Users/aca/Downloads/"+uploadFileName);
         //decryption("output/pkg2_vikas.csv.asc");
 
     }
