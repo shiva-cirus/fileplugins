@@ -36,12 +36,13 @@ public class FileListInputSplitTest {
         final FileStatus statusC = new FileStatus(3, false, 0, 0, 0, new Path("hdfs://hello.com/abc/fileC"));
         final String basePath = "/abc";
 
+        String scheme = "hdfs";
         // generate 3 files with different file sizes
-        FileListData file1 = new FileListData(statusA, basePath);
+        FileListData file1 = new FileListData(statusA, basePath,scheme);
 
-        FileListData file2 = new FileListData(statusB, basePath);
+        FileListData file2 = new FileListData(statusB, basePath,scheme);
 
-        FileListData file3 = new FileListData(statusC, basePath);
+        FileListData file3 = new FileListData(statusC, basePath,scheme);
 
         // a has 3 bytes
         metadataInputSplita.addFileMetadata(file1);

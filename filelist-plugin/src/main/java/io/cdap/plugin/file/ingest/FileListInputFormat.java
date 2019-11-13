@@ -95,10 +95,13 @@ public class FileListInputFormat extends InputFormat {
 
     // create Filesystem object
     FileSystem fileSystem;
+    String scheme=null;
     if (conf.get(FS_URI) != null) {
       URI uri = URI.create(conf.get(FS_URI));
       fileSystem = FileSystem.get(uri, conf);
+      scheme="file";
     } else {
+      scheme="hdfs";
       // This case applies for local HDFS
       fileSystem = FileSystem.get(conf);
     }
@@ -107,7 +110,7 @@ public class FileListInputFormat extends InputFormat {
     List<FileListData> fileMetaDataList = new ArrayList<>();
     for (String prefix : sourcePaths) {
       recursivelyAddFileStatus(
-          fileMetaDataList, prefix, new Path(prefix), recursive, fileSystem, conf);
+          fileMetaDataList, prefix, new Path(prefix), recursive, fileSystem, conf,scheme);
     }
 
     // sort fileMetadataList in descending order such that total number of bytes can be more evenly
@@ -127,10 +130,10 @@ public class FileListInputFormat extends InputFormat {
 
     // assign each split approximately the same number of bytes (2-approx)
     List<InputSplit> inputSplits = new ArrayList<>();
-    for (FileListData fileMetadata : fileMetaDataList) {
+    for (FileListData fileListData : fileMetaDataList) {
       // remove the smallest split from the priority queue and add a new file to it
       FileListInputSplit minInputSplit = abstractInputSplits.poll();
-      minInputSplit.addFileMetadata(fileMetadata);
+      minInputSplit.addFileMetadata(fileListData);
 
       // if the inputsplit has number files more than maxSplitSize, we stop adding files to it
       // otherwise we put it back into the priority queue
@@ -167,16 +170,17 @@ public class FileListInputFormat extends InputFormat {
       Path path,
       Boolean recursive,
       FileSystem filesystem,
-      Configuration conf)
+      Configuration conf,
+      String scheme)
       throws IOException {
     try {
       RemoteIterator<LocatedFileStatus> iter = filesystem.listLocatedStatus(path);
       while (iter.hasNext()) {
         LocatedFileStatus fileStatus = iter.next();
-        fileMetadataList.add(getFileMetadata(fileStatus, prefix, conf));
+        fileMetadataList.add(getFileMetadata(fileStatus, prefix, conf,scheme));
         if (fileStatus.isDirectory() && recursive) {
           recursivelyAddFileStatus(
-              fileMetadataList, prefix, fileStatus.getPath(), recursive, filesystem, conf);
+              fileMetadataList, prefix, fileStatus.getPath(), recursive, filesystem, conf,scheme);
         }
       }
     } catch (FileNotFoundException e) {
@@ -208,7 +212,7 @@ public class FileListInputFormat extends InputFormat {
    * @throws IOException
    */
   protected FileListData getFileMetadata(
-      FileStatus fileStatus, String sourcePath, Configuration conf) throws IOException {
-    return new FileListData(fileStatus, sourcePath);
+      FileStatus fileStatus, String sourcePath, Configuration conf,String scheme) throws IOException {
+    return new FileListData(fileStatus, sourcePath,scheme);
   }
 }

@@ -38,7 +38,7 @@ public class GoogleCloudStoragePOC {
     Class clazz = GoogleCloudStoragePOC.class;
     InputStream inputStream = clazz.getResourceAsStream("/1.csv");
     uploadToStorageApproach1(gzipInputStream(inputStream));
-    uploadToStorageApproach2(gzipInputStream(inputStream));
+    uploadToStorageApproach2();
     uploadToStorageApproach3(gzipInputStream(inputStream));
   }
 
@@ -84,31 +84,30 @@ public class GoogleCloudStoragePOC {
     }
   }
 
-  private static void uploadToStorageApproach2(InputStream fileInputStream)
+  private static void uploadToStorageApproach2()
           throws IOException {
-    BlobId blobId = BlobId.of("pkg_test", "approach2.csv.gz");
+    BlobId blobId = BlobId.of("pkg_test", "a5.csv.gz");
 
     BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
     String privateKeyPassword = "passphrase";
-    ByteArrayOutputStream byteArrayOutputStream=null;
+    InputStream fileInputStream=null;
     try {
       File publicKeyFile = new File("PGP1D0.pkr");
       PGPPublicKey pgpPublicKey = FileEncryptTest.readPublicKeyFromCol(new FileInputStream(publicKeyFile));
       char[] passPhrase = privateKeyPassword.toCharArray();
       String inputFileName =
               "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileCompressEncryptSink/src/main/resources/1.csv";
-      byteArrayOutputStream= FileEncryptTest.encryptFile(inputFileName,pgpPublicKey,passPhrase,false,true);
+      fileInputStream= FileEncryptTest.encryptFile(inputFileName,pgpPublicKey,passPhrase,false,true);
     } catch (Exception e) {
       e.printStackTrace();
     }
-    InputStream targetStream = new ByteArrayInputStream( byteArrayOutputStream.toByteArray());
     // For big files:
     // When content is not available or large (1MB or more) it is recommended to write it in chunks
     // via the blob's channel writer.
     try (WriteChannel writer =
                  storage.writer(blobInfo)) {
       byte[] buffer = new byte[10_240];
-      try (InputStream input = targetStream) {
+      try (InputStream input = fileInputStream) {
         int limit;
         while ((limit = input.read(buffer)) >= 0) {
           System.out.println("upload file " + limit);
