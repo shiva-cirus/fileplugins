@@ -94,6 +94,17 @@
           }
         }
       ]
+    },
+    {
+      "label": "Encryption Credentials",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Public Key Path",
+          "name": "publicKeyPath"
+
+        }
+      ]
     }
 
   ],

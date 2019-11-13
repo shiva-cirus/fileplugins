@@ -14,13 +14,12 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest.compress;
+package io.cdap.plugin.file.ingest;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.ServiceOptions;
-import com.google.cloud.Tuple;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import com.google.common.base.Strings;
@@ -37,8 +36,13 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.SparkExecutionPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkSink;
+import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
+import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
+import io.cdap.plugin.file.ingest.utils.FileEncryptTest;
+import io.cdap.plugin.file.ingest.utils.GCSPath;
 import org.apache.commons.io.IOUtils;
 import org.apache.spark.api.java.JavaRDD;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +50,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -171,7 +174,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
 
     @Override
-    public void run(SparkExecutionPluginContext context, JavaRDD<StructuredRecord> javaRDD) {
+    public void run(SparkExecutionPluginContext context, JavaRDD<StructuredRecord> javaRDD) throws IOException, PGPException {
         LOG.info("Schema and filds are: " + config.compressor);
         String fieldName = null;
         if (config.compressor != null) {
@@ -179,99 +182,67 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             fieldName = split[0];
         }
 
+        System.out.println("fieldName >>>>>>>>>" + fieldName);
+
+        PGPPublicKey encKey = null;
+
+        encKey = PGPExampleUtil.readPublicKey(config.publicKeyPath);
+
         storage = getGoogleStorage();
-        String finalFieldName = fieldName;
-
-
-
         Bucket bucket = getBucket();
 
-        // Save a simple string
-        // BlobId blobId = googleCloudStorage.saveString("pkg", "Hi there!", bucket);
+        String finalFieldName = fieldName;
+        PGPPublicKey finalEncKey = encKey;
 
+        List<StructuredRecord> collect = javaRDD.collect();
 
-        javaRDD.foreach(st -> {
+        collect.forEach(st -> {
 
             String fileName = st.get(finalFieldName);
             String outFileName = null;
             File file = new File(fileName);
             if (file != null) {
-                outFileName =  file.getName() + ".gz.enc";
+                outFileName = file.getName() + ".enc";
             }
+
+            LOG.info("file Name >>> " + fileName);
 
             BlobId blobId = BlobId.of(bucket.getName(), outFileName);
 
-            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/gzip").build();
-
-            Class<? extends CompressorEncryptorSink> clazz = this.getClass();
-
-            InputStream inputStream = clazz.getResourceAsStream(fileName);
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
 
 
-            uploadToStorage(encryptInputStream(gzipInputStream(inputStream)), blobInfo);;
+            InputStream inputStream = null;
 
+            try {
+                inputStream = FileCompressEncrypt.gcsWriter(fileName, finalEncKey);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-
-
-
-
-            /*try {
-            String name = fileName;
-                byte[] buffer = new byte[2048];
-
-                FileOutputStream fileOutputStream = new FileOutputStream(outFileName);
-
-                GZIPOutputStream gzipOuputStream = new GZIPOutputStream(fileOutputStream);
-
-
-                fileOutputStream.getChannel();
-
-                FileInputStream fileInput = new FileInputStream(fileName);
-
-                int bytes_read;
-
-
-                Tuple<Storage, BlobInfo> tuple = googleCloudSinkStorage(context, fileName);
-                BlobInfo blobInfo = tuple.y();
-                Storage storage = tuple.x();
-
-                try (WriteChannel writer = storage.writer(blobInfo)) {
-                    byte[] buffer1 = new byte[1024];
-                    try (InputStream input = Files.newInputStream((Path) fileInput)) {
-                        int limit;
-                        while ((limit = input.read(buffer)) >= 0) {
-                            try {
-                                writer.write(ByteBuffer.wrap(buffer, 0, limit));
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        }
+            byte[] buffer = new byte[1 << 16];
+            try {
+                try (WriteChannel writer =
+                             storage.writer(blobInfo)) {
+                    int limit;
+                    while ((limit = inputStream.read(buffer)) >= 0) {
+                        System.out.println("upload file " + limit);
+                        writer.write(ByteBuffer.wrap(buffer, 0, limit));
                     }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-
-                while ((bytes_read = fileInput.read(buffer)) > 0) {
-                    gzipOuputStream.write(buffer, 0, bytes_read);
-                    //googleCloudSink(context, fileName, fileInput);
-                }
-
-                fileInput.close();
-
-                gzipOuputStream.finish();
-                gzipOuputStream.close();
-
-                System.out.println("The file was compressed successfully!");
-
-
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }*/
 
         });
 
-
     }
-
 
 
     private Storage getGoogleStorage() {
@@ -297,7 +268,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         PipedOutputStream outPipe = new PipedOutputStream(inPipe);
         new Thread(
                 () -> {
-                    try(OutputStream outZip = new GZIPOutputStream(outPipe)){
+                    try (OutputStream outZip = new GZIPOutputStream(outPipe)) {
                         IOUtils.copy(inputStream, outZip);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -347,7 +318,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         return new FileOutputStream("");
     }
 
-    private void getFileStorage(SparkExecutionPluginContext context) {
+    /*private void getFileStorage(SparkExecutionPluginContext context) {
         String cmekKey = context.getArguments().get(GCPUtils.CMEK_KEY);
         Credentials credentials = null;
         try {
@@ -389,7 +360,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         Tuple<Storage, BlobInfo> tuple = Tuple.of(storage, parse.y());
         return tuple;
 
-    }
+    }*/
 
 
     @Override
@@ -472,6 +443,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         public static final String NAME_PROJECT = "project";
         public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
         public static final String AUTO_DETECT = "auto-detect";
+        public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
 
 
         private static final String SCHEME = "gs://";
@@ -531,7 +503,11 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         protected String serviceFilePath;
 
 
-
+        @Name(NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH)
+        @Description("Path on the local file system of the public key used for encryption.")
+        @Macro
+        @Nullable
+        protected String publicKeyPath;
 
         public String getBucket() {
             return GCSPath.from(path).getBucket();
@@ -640,7 +616,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             return false;
         }
 
-        public Config(String compressor, String tableName, String path, @Nullable String suffix, String format, @Nullable String delimiter, @Nullable String schema, @Nullable String location, @Nullable String project, @Nullable String serviceFilePath) {
+        public Config(String compressor, String tableName, String path, @Nullable String suffix, String format, @Nullable String delimiter, @Nullable String schema, @Nullable String location, @Nullable String project, @Nullable String serviceFilePath, @Nullable String publicKeyPath) {
             this.compressor = compressor;
             this.tableName = tableName;
             this.path = path;
@@ -651,6 +627,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             this.location = location;
             this.project = project;
             this.serviceFilePath = serviceFilePath;
+            this.publicKeyPath = publicKeyPath;
         }
     }
 

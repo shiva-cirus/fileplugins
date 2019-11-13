@@ -1,4 +1,16 @@
-package io.cdap.plugin.file.ingest.compress;
+package io.cdap.plugin.file.ingest.utils;
+
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.*;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -7,49 +19,6 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Iterator;
-import java.util.zip.GZIPOutputStream;
-
-import com.google.cloud.WriteChannel;
-import com.google.cloud.storage.BlobInfo;
-import org.apache.commons.io.IOUtils;
-import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.PGPCompressedData;
-import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
-import org.bouncycastle.openpgp.PGPEncryptedData;
-import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
-import org.bouncycastle.openpgp.PGPEncryptedDataList;
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPLiteralData;
-import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
-import org.bouncycastle.openpgp.PGPOnePassSignatureList;
-import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
-import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
-import org.bouncycastle.openpgp.PGPSecretKey;
-import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.PGPSignatureGenerator;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
-import org.bouncycastle.openpgp.PGPUtil;
-import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
-import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
-
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 //
 public class FileEncryptTest {
@@ -58,6 +27,7 @@ public class FileEncryptTest {
     private static String privateKeyPassword = "passphrase";
 
     private OutputStream outputStream;
+
     public FileEncryptTest(OutputStream outPipe) {
         this.outputStream = outPipe;
     }
@@ -88,9 +58,7 @@ public class FileEncryptTest {
         boolean armor = false;
         boolean withIntegrityCheck = true;
 
-        try
-
-        {
+        try {
             keyIn = new BufferedInputStream(new FileInputStream(privateKeyFile));
             //out = new BufferedOutputStream(new FileOutputStream(outFileName));
             encKey = readPublicKeyFromCol(new FileInputStream(publicKeyFile));
@@ -99,15 +67,11 @@ public class FileEncryptTest {
             out = new BufferedOutputStream(outputStream);
             encryptFile(outFileName, out, fileName, encKey, passPhrase, armor, withIntegrityCheck);
         } catch (
-                Exception e)
-
-        {
+                Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
 
-        } finally
-
-        {
+        } finally {
             try {
                 keyIn.close();
                 out.close();

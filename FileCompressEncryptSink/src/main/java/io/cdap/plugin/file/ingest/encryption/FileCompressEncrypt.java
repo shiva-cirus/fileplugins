@@ -30,13 +30,13 @@ import java.util.Iterator;
  * @author Vikas K  Created On 09/11/19
  **/
 
-public class FileCompressEncGCSUpload_bak {
+public class FileCompressEncrypt {
     private static final int INT = 1 << 16;
     static Storage storage = null;
 
-    public FileCompressEncGCSUpload_bak(String pathToConfig, String projectId) throws IOException {
+    public FileCompressEncrypt(String pathToConfig, String projectId) throws IOException {
         Credentials credentials = GoogleCredentials.fromStream(new FileInputStream(pathToConfig));
-        FileCompressEncGCSUpload_bak.storage =
+        FileCompressEncrypt.storage =
                 StorageOptions.newBuilder()
                         .setCredentials(credentials)
                         .setProjectId(projectId)
@@ -101,7 +101,7 @@ public class FileCompressEncGCSUpload_bak {
                 throw new IllegalArgumentException("secret key for message not found.");
             }
 
-            InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(sKey));
+            InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(sKey));
 
             JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
 
@@ -149,7 +149,7 @@ public class FileCompressEncGCSUpload_bak {
         }
     }
 
-    static OutputStream encryptFile(
+    private static void encryptFile(
             OutputStream out,
             String fileName,
             PGPPublicKey encKey,
@@ -160,21 +160,18 @@ public class FileCompressEncGCSUpload_bak {
             out = new ArmoredOutputStream(out);
         }
 
-        OutputStream outputStream = null;
         try {
-            PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider("BC"));
+            PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(new BouncyCastleProvider()));
 
-            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider("BC"));
+            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider(new BouncyCastleProvider()));
 
-            OutputStream cOut = cPk.open(out, new byte[INT]);
+            OutputStream cOut = cPk.open(out, new byte[1 << 16]);
 
             PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
                     PGPCompressedData.ZIP);
 
-            //PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
+            PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
 
-
-            outputStream = writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[INT]);
             comData.close();
 
             cOut.close();
@@ -188,10 +185,9 @@ public class FileCompressEncGCSUpload_bak {
                 e.getUnderlyingException().printStackTrace();
             }
         }
-        return outputStream;
     }
 
-    private static void dec(String inFile) throws IOException, NoSuchProviderException {
+    private static void decryption(String inFile) throws IOException, NoSuchProviderException {
         String privateKeyPassword = "passphrase";
         decryptFile(inFile, "PGP1D0.skr", privateKeyPassword.toCharArray(), "abc11.txt");
     }
@@ -218,7 +214,7 @@ public class FileCompressEncGCSUpload_bak {
         return var1;
     }
 
-    private static InputStream gcsWriter( String inFileName, PGPPublicKey encKey) throws IOException {
+    public static InputStream gcsWriter(String inFileName, PGPPublicKey encKey) throws IOException {
         //InputStream inputStream = new FileInputStream(inFileName);
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
@@ -227,12 +223,12 @@ public class FileCompressEncGCSUpload_bak {
         new Thread(
                 () -> {
                     try {
-                        OutputStream outputStream1 = encryptFile(outPipe, inFileName, encKey, false, true);
-                        Thread.sleep(10000);
+                        encryptFile(outPipe, inFileName, encKey, false, true);
+                        //Thread.sleep(10000);
                         //outPipe.close();
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } catch (NoSuchProviderException | InterruptedException e) {
+                    } catch (NoSuchProviderException e) {
                         e.printStackTrace();
                     } finally {
                         try {
@@ -246,19 +242,19 @@ public class FileCompressEncGCSUpload_bak {
         return inPipe;
     }
 
-    private static void encWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
+    public static void encryptionCompressAndUploadGCSWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
 
 
         PGPPublicKey encKey = PGPExampleUtil.readPublicKey("PGP1D0.pkr");
 
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
-        InputStream inputStream = gcsWriter( inFileName, encKey);
-        try {
+        InputStream inputStream = gcsWriter(inFileName, encKey);
+        /*try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         byte[] buffer = new byte[INT];
         try (WriteChannel writer =
                      storage.writer(blobInfo)) {
@@ -284,19 +280,25 @@ public class FileCompressEncGCSUpload_bak {
 
 
     }
+
     public static void main(
             String[] args)
             throws Exception {
         Security.addProvider(new BouncyCastleProvider());
-        FileCompressEncGCSUpload_bak googleCloudStorage =
-                new FileCompressEncGCSUpload_bak("rugged-alloy-254904-08590d697da8.json", "rugged-alloy-254904");
+        FileCompressEncrypt googleCloudStorage =
+                new FileCompressEncrypt("rugged-alloy-254904-08590d697da8.json", "rugged-alloy-254904");
 
-        encOnLocalFileSys("input/pkg1_vikas.csv", "output/pkg1_vikas.csv.asc");
+        //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
 
-        //encWithThread("input/pkg1_vikas.csv" , "cdap_vikas", "approach_withTherad_pkg1_vikas.csv.asc");
+        String inFileName = "input/pkg1_vikas.csv";
+        String bucketName = "cdap_vikas";
+        String uploadFileName = "pkg1_vikas.csv.asc";
 
-        //dec("/Users/vikaskumar/Downloads/approach_withTherad_pkg1_vikas.csv.asc");
-        dec("output/pkg1_vikas.csv.asc");
+        encryptionCompressAndUploadGCSWithThread(inFileName, bucketName, uploadFileName);
+
+
+        //decryption("/Users/vikaskumar/Downloads/largefile_2gb_cp.asc");
+        //decryption("output/pkg2_vikas.csv.asc");
 
     }
 }
