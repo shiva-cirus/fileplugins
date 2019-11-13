@@ -318,7 +318,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         return new FileOutputStream("");
     }
 
-    private void getFileStorage(SparkExecutionPluginContext context) {
+    /*private void getFileStorage(SparkExecutionPluginContext context) {
         String cmekKey = context.getArguments().get(GCPUtils.CMEK_KEY);
         Credentials credentials = null;
         try {
@@ -360,7 +360,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         Tuple<Storage, BlobInfo> tuple = Tuple.of(storage, parse.y());
         return tuple;
 
-    }
+    }*/
 
 
     @Override
