@@ -30,13 +30,13 @@ import java.util.Iterator;
  * @author Vikas K  Created On 09/11/19
  **/
 
-public class FileCompressEncGCSUpload {
+public class FileCompressEncrypt {
     private static final int INT = 1 << 16;
     static Storage storage = null;
 
-    public FileCompressEncGCSUpload(String pathToConfig, String projectId) throws IOException {
+    public FileCompressEncrypt(String pathToConfig, String projectId) throws IOException {
         Credentials credentials = GoogleCredentials.fromStream(new FileInputStream(pathToConfig));
-        FileCompressEncGCSUpload.storage =
+        FileCompressEncrypt.storage =
                 StorageOptions.newBuilder()
                         .setCredentials(credentials)
                         .setProjectId(projectId)
@@ -291,8 +291,8 @@ public class FileCompressEncGCSUpload {
             String[] args)
             throws Exception {
         Security.addProvider(new BouncyCastleProvider());
-        FileCompressEncGCSUpload googleCloudStorage =
-                new FileCompressEncGCSUpload("rugged-alloy-254904-08590d697da8.json", "rugged-alloy-254904");
+        FileCompressEncrypt googleCloudStorage =
+                new FileCompressEncrypt("rugged-alloy-254904-08590d697da8.json", "rugged-alloy-254904");
 
         //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
 

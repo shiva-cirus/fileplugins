@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest.compress;
+package io.cdap.plugin.file.ingest.utils;
 
 
 import java.io.UnsupportedEncodingException;

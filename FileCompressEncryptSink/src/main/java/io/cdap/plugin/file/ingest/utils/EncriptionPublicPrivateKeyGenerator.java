@@ -1,4 +1,4 @@
-package io.cdap.plugin.file.ingest.compress;
+package io.cdap.plugin.file.ingest.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,7 +28,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
-public class FileEncDec {
+public class EncriptionPublicPrivateKeyGenerator {
 
     private static File publicKeyFile = new File("PGP1D0.pkr");
     private static File privateKeyFile = new File("PGP1D0.skr");

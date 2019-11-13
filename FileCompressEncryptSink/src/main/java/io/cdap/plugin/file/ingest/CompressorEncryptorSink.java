@@ -14,13 +14,12 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest.compress;
+package io.cdap.plugin.file.ingest;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.ServiceOptions;
-import com.google.cloud.Tuple;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import com.google.common.base.Strings;
@@ -37,8 +36,10 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.SparkExecutionPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkSink;
-import io.cdap.plugin.file.ingest.encryption.FileCompressEncGCSUpload;
+import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
+import io.cdap.plugin.file.ingest.utils.FileEncryptTest;
+import io.cdap.plugin.file.ingest.utils.GCSPath;
 import org.apache.commons.io.IOUtils;
 import org.apache.spark.api.java.JavaRDD;
 import org.bouncycastle.openpgp.PGPException;
@@ -49,7 +50,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -215,7 +215,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             InputStream inputStream = null;
 
             try {
-                inputStream = FileCompressEncGCSUpload.gcsWriter(fileName, finalEncKey);
+                inputStream = FileCompressEncrypt.gcsWriter(fileName, finalEncKey);
             } catch (IOException e) {
                 e.printStackTrace();
             }
