@@ -41,6 +41,8 @@ import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
 import io.cdap.plugin.file.ingest.utils.FileEncryptTest;
 import io.cdap.plugin.file.ingest.utils.GCSPath;
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaRDD;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -49,6 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +71,8 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     private static final Logger LOG = LoggerFactory.getLogger(CompressorEncryptorSink.class);
 
     private Config config = null;
+
+    Configuration conf= null;
 
     public static final String NAME = "CompressorEncryptorSink";
 
@@ -122,54 +127,6 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         }
         pipelineConfigurer.createDataset(config.tableName, KeyValueTable.class, DatasetProperties.EMPTY);
 
-    }
-
-
-    private static byte[] gzip(byte[] input) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GZIPOutputStream gzip = null;
-        try {
-            gzip = new GZIPOutputStream(out);
-            gzip.write(input, 0, input.length);
-        } catch (IOException e) {
-            // These are all in memory operations, so this should not happen.
-            // But, if it happens then we just return null. Logging anything
-            // here can be noise.
-            return null;
-        } finally {
-            if (gzip != null) {
-                try {
-                    gzip.close();
-                } catch (IOException e) {
-                    return null;
-                }
-            }
-        }
-
-        return out.toByteArray();
-    }
-
-    private byte[] zip(byte[] input) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(out);
-        try {
-            zos.setLevel(9);
-            zos.putNextEntry(new ZipEntry("c"));
-            zos.write(input, 0, input.length);
-            zos.finish();
-        } catch (IOException e) {
-            return null;
-        } finally {
-            try {
-                if (zos != null) {
-                    zos.close();
-                }
-            } catch (IOException e) {
-                return null;
-            }
-        }
-
-        return out.toByteArray();
     }
 
 
@@ -263,104 +220,6 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
     }
 
-    private static InputStream gzipInputStream(InputStream inputStream) throws IOException {
-        PipedInputStream inPipe = new PipedInputStream();
-        PipedOutputStream outPipe = new PipedOutputStream(inPipe);
-        new Thread(
-                () -> {
-                    try (OutputStream outZip = new GZIPOutputStream(outPipe)) {
-                        IOUtils.copy(inputStream, outZip);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-        ).start();
-        return inPipe;
-    }
-
-    private static InputStream encryptInputStream(InputStream inputStream) throws IOException {
-        PipedInputStream inPipe = new PipedInputStream();
-        PipedOutputStream outPipe = new PipedOutputStream(inPipe);
-        DataOutputStream dataOutputStream = new DataOutputStream(outPipe);
-        new Thread(
-                () -> {
-                    FileEncryptTest outZip = new FileEncryptTest(outPipe);
-                    try {
-                        IOUtils.copy(inputStream, dataOutputStream);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-        ).start();
-        return inPipe;
-    }
-
-    private static void uploadToStorage(InputStream fileInputStream, BlobInfo blobInfo)
-            throws IOException {
-
-        // For big files:
-        // When content is not available or large (1MB or more) it is recommended to write it in chunks
-        // via the blob's channel writer.
-        try (WriteChannel writer = storage.writer(blobInfo)) {
-
-            byte[] buffer = new byte[10_240];
-            try (InputStream input = fileInputStream) {
-                int limit;
-                while ((limit = input.read(buffer)) >= 0) {
-                    writer.write(ByteBuffer.wrap(buffer, 0, limit));
-                }
-            }
-        }
-    }
-
-    private FileOutputStream compressEncript(FileInputStream fis, CompressorType type, String publicKey) throws FileNotFoundException {
-        return new FileOutputStream("");
-    }
-
-    /*private void getFileStorage(SparkExecutionPluginContext context) {
-        String cmekKey = context.getArguments().get(GCPUtils.CMEK_KEY);
-        Credentials credentials = null;
-        try {
-            credentials = config.getServiceAccountFilePath() == null ?
-                    null : GCPUtils.loadServiceAccountCredentials(config.getServiceAccountFilePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Storage storage = GCPUtils.getStorage(config.getProject(), credentials);
-        if (storage.get(config.getBucket()) == null) {
-            GCPUtils.createBucket(storage, config.getBucket(), config.getLocation(), cmekKey);
-        }
-
-    }
-
-    private Tuple<Storage, BlobInfo> googleCloudSinkStorage(SparkExecutionPluginContext context, String filePath) {
-        String cmekKey = context.getArguments().get(GCPUtils.CMEK_KEY);
-        Credentials credentials = null;
-        try {
-            credentials = config.getServiceAccountFilePath() == null ?
-                    null : GCPUtils.loadServiceAccountCredentials(config.getServiceAccountFilePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Storage storage = GCPUtils.getStorage(config.getProject(), credentials);
-        if (storage.get(config.getBucket()) == null) {
-            GCPUtils.createBucket(storage, config.getBucket(), config.getLocation(), cmekKey);
-        }
-        GCSFIleUpload gcsfIleUpload = new GCSFIleUpload();
-        Tuple<Path, BlobInfo> parse = null;
-        try {
-            parse = gcsfIleUpload.parse(filePath, config.getBucket(), config.getLocation());
-            //gcsfIleUpload.run(storage, parse);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        Tuple<Storage, BlobInfo> tuple = Tuple.of(storage, parse.y());
-        return tuple;
-
-    }*/
 
 
     @Override

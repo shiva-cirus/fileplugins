@@ -192,27 +192,25 @@ public class FileCompressEncrypt {
         decryptFile(inFile, "PGP1D0.skr", privateKeyPassword.toCharArray(), "abc11.txt");
     }
 
-    public static OutputStream writeFileToLiteralData(OutputStream var0, char var1, File var2, byte[] var3) throws IOException {
+    public static void writeFileToLiteralData(OutputStream var0, char var1, File var2, byte[] var3) throws IOException {
         PGPLiteralDataGenerator var4 = new PGPLiteralDataGenerator();
         OutputStream var5 = var4.open(var0, var1, var2.getName(), new Date(var2.lastModified()), var3);
-        return pipeFileContents(var2, var5, var3.length);
+        pipeFileContents(var2, var5, var3.length);
     }
 
-    private static OutputStream pipeFileContents(File var0, OutputStream var1, int var2) throws IOException {
+    private static void pipeFileContents(File var0, OutputStream var1, int var2) throws IOException {
         FileInputStream var3 = new FileInputStream(var0);
         byte[] var4 = new byte[var2];
 
-        /*int var5;
-        while ((var5 = var3.read(var4)) > 0) {
+        int var5;
+        while((var5 = var3.read(var4)) > 0) {
             var1.write(var4, 0, var5);
-        }*/
-        IOUtils.copy(var3, var1);
-        //var1.close();
+        }
+
+        var1.close();
         var3.close();
-
-
-        return var1;
     }
+
 
     public static InputStream gcsWriter(String inFileName, PGPPublicKey encKey) throws IOException {
         //InputStream inputStream = new FileInputStream(inFileName);
