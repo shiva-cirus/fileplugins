@@ -150,27 +150,24 @@ public class FileCompressEncrypt {
     }
 
     private static void encryptFile(
-            OutputStream    out,
-            String          fileName,
-            PGPPublicKey    encKey,
-            boolean         armor,
-            boolean         withIntegrityCheck)
-            throws IOException, NoSuchProviderException
-    {
-        if (armor)
-        {
+            OutputStream out,
+            String fileName,
+            PGPPublicKey encKey,
+            boolean armor,
+            boolean withIntegrityCheck)
+            throws IOException, NoSuchProviderException {
+        if (armor) {
             out = new ArmoredOutputStream(out);
         }
 
-        try
-        {
-            PGPEncryptedDataGenerator   cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(new BouncyCastleProvider()));
+        try {
+            PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(new BouncyCastleProvider()));
 
             cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider(new BouncyCastleProvider()));
 
-            OutputStream                cOut = cPk.open(out, new byte[1 << 16]);
+            OutputStream cOut = cPk.open(out, new byte[1 << 16]);
 
-            PGPCompressedDataGenerator  comData = new PGPCompressedDataGenerator(
+            PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
                     PGPCompressedData.ZIP);
 
             PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
@@ -179,16 +176,12 @@ public class FileCompressEncrypt {
 
             cOut.close();
 
-            if (armor)
-            {
+            if (armor) {
                 out.close();
             }
-        }
-        catch (PGPException e)
-        {
+        } catch (PGPException e) {
             System.err.println(e);
-            if (e.getUnderlyingException() != null)
-            {
+            if (e.getUnderlyingException() != null) {
                 e.getUnderlyingException().printStackTrace();
             }
         }
@@ -221,7 +214,7 @@ public class FileCompressEncrypt {
         return var1;
     }
 
-    public static InputStream gcsWriter( String inFileName, PGPPublicKey encKey) throws IOException {
+    public static InputStream gcsWriter(String inFileName, PGPPublicKey encKey) throws IOException {
         //InputStream inputStream = new FileInputStream(inFileName);
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
@@ -256,7 +249,7 @@ public class FileCompressEncrypt {
 
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
-        InputStream inputStream = gcsWriter( inFileName, encKey);
+        InputStream inputStream = gcsWriter(inFileName, encKey);
         /*try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -287,6 +280,7 @@ public class FileCompressEncrypt {
 
 
     }
+
     public static void main(
             String[] args)
             throws Exception {

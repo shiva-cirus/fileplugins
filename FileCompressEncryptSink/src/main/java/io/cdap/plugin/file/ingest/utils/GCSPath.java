@@ -28,95 +28,95 @@ import java.util.regex.Pattern;
  * A path is of the form gs://bucket/name.
  */
 public class GCSPath {
-  public static final String ROOT_DIR = "/";
-  public static final String SCHEME = "gs://";
-  private final URI uri;
-  private final String bucket;
-  private final String name;
+    public static final String ROOT_DIR = "/";
+    public static final String SCHEME = "gs://";
+    private final URI uri;
+    private final String bucket;
+    private final String name;
 
-  private GCSPath(URI uri, String bucket, String name) {
-    this.uri = uri;
-    this.bucket = bucket;
-    this.name = name;
-  }
-
-  public URI getUri() {
-    return uri;
-  }
-
-  public String getBucket() {
-    return bucket;
-  }
-
-  /**
-   * @return the object name. This will be an empty string if the path represents a bucket.
-   */
-  public String getName() {
-    return name;
-  }
-
-  boolean isBucket() {
-    return name.isEmpty();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    GCSPath gcsPath = (GCSPath) o;
-    return Objects.equals(uri, gcsPath.uri) &&
-      Objects.equals(bucket, gcsPath.bucket) &&
-      Objects.equals(name, gcsPath.name);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(uri, bucket, name);
-  }
-
-  /**
-   * Parse the given path string into a GCSPath. Paths are expected to be of the form
-   * gs://bucket/dir0/dir1/file, or bucket/dir0/dir1/file.
-   *
-   * @param path the path string to parse
-   * @return the GCSPath for the given string.
-   * @throws IllegalArgumentException if the path string is invalid
-   */
-  public static GCSPath from(String path) {
-    if (path.isEmpty()) {
-      throw new IllegalArgumentException("GCS path can not be empty. The path must be of form " +
-                                           "'gs://<bucket-name>/path'.");
+    private GCSPath(URI uri, String bucket, String name) {
+        this.uri = uri;
+        this.bucket = bucket;
+        this.name = name;
     }
 
-    if (path.startsWith(ROOT_DIR)) {
-      path = path.substring(1);
-    } else if (path.startsWith(SCHEME)) {
-      path = path.substring(SCHEME.length());
+    public URI getUri() {
+        return uri;
     }
 
-    String bucket = path;
-    int idx = path.indexOf(ROOT_DIR);
-    // if the path within bucket is provided, then only get the bucket
-    if (idx > 0) {
-      bucket = path.substring(0, idx);
+    public String getBucket() {
+        return bucket;
     }
 
-    if (!Pattern.matches("[a-zA-Z0-9-_.]+", bucket)) {
-      throw new IllegalArgumentException(String.format("Invalid bucket name in path '%s'. Bucket name should only " +
-                                                         "contain alphanumeric, '-'. '_' and '.'.", path));
+    /**
+     * @return the object name. This will be an empty string if the path represents a bucket.
+     */
+    public String getName() {
+        return name;
     }
 
-    String file = idx > 0 ? path.substring(idx).replaceAll("^/", "") : "";
-    URI uri = null;
-    try {
-      uri = URI.create(SCHEME + bucket + "/" + URLEncoder.encode(file, "UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
+    boolean isBucket() {
+        return name.isEmpty();
     }
-    return new GCSPath(uri, bucket, file);
-  }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GCSPath gcsPath = (GCSPath) o;
+        return Objects.equals(uri, gcsPath.uri) &&
+                Objects.equals(bucket, gcsPath.bucket) &&
+                Objects.equals(name, gcsPath.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uri, bucket, name);
+    }
+
+    /**
+     * Parse the given path string into a GCSPath. Paths are expected to be of the form
+     * gs://bucket/dir0/dir1/file, or bucket/dir0/dir1/file.
+     *
+     * @param path the path string to parse
+     * @return the GCSPath for the given string.
+     * @throws IllegalArgumentException if the path string is invalid
+     */
+    public static GCSPath from(String path) {
+        if (path.isEmpty()) {
+            throw new IllegalArgumentException("GCS path can not be empty. The path must be of form " +
+                    "'gs://<bucket-name>/path'.");
+        }
+
+        if (path.startsWith(ROOT_DIR)) {
+            path = path.substring(1);
+        } else if (path.startsWith(SCHEME)) {
+            path = path.substring(SCHEME.length());
+        }
+
+        String bucket = path;
+        int idx = path.indexOf(ROOT_DIR);
+        // if the path within bucket is provided, then only get the bucket
+        if (idx > 0) {
+            bucket = path.substring(0, idx);
+        }
+
+        if (!Pattern.matches("[a-zA-Z0-9-_.]+", bucket)) {
+            throw new IllegalArgumentException(String.format("Invalid bucket name in path '%s'. Bucket name should only " +
+                    "contain alphanumeric, '-'. '_' and '.'.", path));
+        }
+
+        String file = idx > 0 ? path.substring(idx).replaceAll("^/", "") : "";
+        URI uri = null;
+        try {
+            uri = URI.create(SCHEME + bucket + "/" + URLEncoder.encode(file, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return new GCSPath(uri, bucket, file);
+    }
 }
