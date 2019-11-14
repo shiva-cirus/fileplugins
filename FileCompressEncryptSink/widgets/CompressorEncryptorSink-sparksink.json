@@ -4,32 +4,47 @@
   },
   "configuration-groups": [
     {
-      "label": "Compressor",
+      "label": "Compression",
       "properties": [
         {
-          "widget-type": "keyvalue-dropdown",
-          "label": "Compress Fields",
+          "widget-type": "select",
+          "label": "Compression Algorithm",
           "name": "compressor",
           "widget-attributes": {
-            "showDelimiter": "false",
-            "dropdownOptions": [
-              "SNAPPY",
+            "values": [
               "ZIP",
-              "GZIP",
               "NONE"
             ],
-            "key-placeholder": "Field Name"
+            "default": "NONE"
           }
-        },
-        {
-          "widget-type": "dataset-selector",
-          "label": "Table Name",
-          "name": "tableName"
         }
       ]
     },
     {
-      "label": "Google Cloud Stogare Parameters",
+      "label": "Encryption",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Encryption Algorithm",
+          "name": "encryption",
+          "widget-attributes": {
+            "values": [
+              "PGP",
+              "NONE"
+            ],
+            "default": "NONE"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Public Key Path",
+          "name": "publicKeyPath"
+
+        }
+      ]
+    },
+    {
+      "label": "Google Cloud Storage Parameters",
       "properties": [
         {
           "widget-type": "textbox",
@@ -46,39 +61,6 @@
           "widget-attributes": {
             "placeholder": "gs://<bucket>/path/to/output"
           }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Path Suffix",
-          "name": "suffix",
-          "widget-attributes": {
-            "default": "yyyy-MM-dd-HH-mm"
-          }
-        },
-        {
-          "widget-type": "select",
-          "label": "Format",
-          "name": "format",
-          "widget-attributes": {
-            "values": [
-              "avro",
-              "csv",
-              "delimited",
-              "json",
-              "orc",
-              "parquet",
-              "tsv"
-            ],
-            "default": "json"
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Delimiter",
-          "name": "delimiter",
-          "widget-attributes": {
-            "placeholder": "Delimiter if the format is 'delimited'"
-          }
         }
       ]
     },
@@ -92,17 +74,6 @@
           "widget-attributes": {
             "default": "auto-detect"
           }
-        }
-      ]
-    },
-    {
-      "label": "Encryption Credentials",
-      "properties": [
-        {
-          "widget-type": "textbox",
-          "label": "Public Key Path",
-          "name": "publicKeyPath"
-
         }
       ]
     }

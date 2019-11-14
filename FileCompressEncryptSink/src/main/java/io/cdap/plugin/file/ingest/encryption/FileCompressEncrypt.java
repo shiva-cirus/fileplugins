@@ -9,7 +9,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
@@ -159,10 +159,85 @@ public class FileCompressEncrypt {
         }
     }
 
-    private static void encryptFile(
+    private static void encryptFile(OutputStream out,
+                                    FileMetaData fileMetaData,
+                                    boolean compressFile, boolean encryptFile, PGPPublicKey encKey,
+                                    boolean armor,
+                                    boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
+        if (compressFile && encryptFile) {
+            compressAndEncryptFile(out, fileMetaData, compressFile, encryptFile, encKey, armor, withIntegrityCheck);
+        } else if (compressFile) {
+            compressOnly(out, fileMetaData, armor);
+        } else if (encryptFile) {
+            encryptOnly(out, fileMetaData, encKey, armor, withIntegrityCheck);
+        } else {
+            noCompressNoEncrypt(out, fileMetaData, armor);
+        }
+    }
+
+    private static void compressOnly(OutputStream out, FileMetaData fileMetaData, boolean armor) throws IOException, NoSuchProviderException {
+        if (armor) {
+            out = new ArmoredOutputStream(out);
+        }
+
+        PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+
+        //PGPUtil.writeFileToLiteralData(comData.open(out), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
+        writeFileToLiteralData(comData.open(out), PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
+
+        comData.close();
+
+        if (armor) {
+            out.close();
+        }
+
+    }
+
+    private static void encryptOnly(OutputStream out, FileMetaData fileMetaData, PGPPublicKey encKey, boolean armor, boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
+        if (armor) {
+            out = new ArmoredOutputStream(out);
+        }
+
+        try {
+            PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(withIntegrityCheck).setSecureRandom(new SecureRandom()).setProvider(new BouncyCastleProvider()));
+
+            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider(new BouncyCastleProvider()));
+
+            OutputStream cOut = cPk.open(out, new byte[1 << 16]);
+
+            //PGPUtil.writeFileToLiteralData(cOut, PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
+            writeFileToLiteralData(cOut, PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
+
+            cOut.close();
+
+            if (armor) {
+                out.close();
+            }
+        } catch (PGPException e) {
+            System.err.println(e);
+            if (e.getUnderlyingException() != null) {
+                e.getUnderlyingException().printStackTrace();
+            }
+        }
+    }
+
+    private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData, boolean armor) throws IOException, NoSuchProviderException {
+        if (armor) {
+            out = new ArmoredOutputStream(out);
+        }
+
+        //PGPUtil.writeFileToLiteralData(out, PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
+        writeFileToLiteralData(out, PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
+
+        if (armor) {
+            out.close();
+        }
+    }
+
+    private static void compressAndEncryptFile(
             OutputStream out,
             FileMetaData fileMetaData,
-            PGPPublicKey encKey,
+            boolean compressFile, boolean encryptFile, PGPPublicKey encKey,
             boolean armor,
             boolean withIntegrityCheck)
             throws IOException, NoSuchProviderException {
@@ -214,7 +289,7 @@ public class FileCompressEncrypt {
         byte[] var4 = new byte[var2];
 
         int var5;
-        while((var5 = var3.read(var4)) > 0) {
+        while ((var5 = var3.read(var4)) > 0) {
             var1.write(var4, 0, var5);
         }
 
@@ -223,10 +298,10 @@ public class FileCompressEncrypt {
     }
 
     private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return  new FileMetaData(filePath, conf);
+        return new FileMetaData(filePath, conf);
     }
 
-    public static InputStream gcsWriter(FileMetaData fileMetaData, PGPPublicKey encKey) throws IOException {
+    public static InputStream gcsWriter(FileMetaData fileMetaData, boolean compressFile, boolean encryptFile, PGPPublicKey encKey) throws IOException {
         //InputStream inputStream = new FileInputStream(inFileName);
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
@@ -235,7 +310,7 @@ public class FileCompressEncrypt {
         new Thread(
                 () -> {
                     try {
-                        encryptFile(outPipe, fileMetaData, encKey, false, true);
+                        encryptFile(outPipe, fileMetaData, compressFile, encryptFile, encKey, false, true);
                         //Thread.sleep(10000);
                         //outPipe.close();
                     } catch (IOException e) {
@@ -262,7 +337,7 @@ public class FileCompressEncrypt {
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
         FileMetaData fileMetaData = new FileMetaData(inFileName, conf);
-        InputStream inputStream = gcsWriter(fileMetaData, encKey);
+        InputStream inputStream = gcsWriter(fileMetaData, true, true, encKey);
         /*try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {

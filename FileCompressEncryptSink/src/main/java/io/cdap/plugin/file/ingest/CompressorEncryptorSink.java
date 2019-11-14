@@ -29,8 +29,6 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.api.dataset.DatasetProperties;
-import io.cdap.cdap.api.dataset.lib.KeyValueTable;
 import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.SparkExecutionPluginContext;
@@ -40,9 +38,8 @@ import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import io.cdap.plugin.file.ingest.utils.GCSPath;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaRDD;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -50,7 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,11 +65,10 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
     private static final Logger LOG = LoggerFactory.getLogger(CompressorEncryptorSink.class);
 
-    private Config config = null;
+    //private Config config = null;
+    private CompressorEncryptorSinkConfig config = null;
 
     static Configuration conf = null;
-
-
 
     public static final String NAME = "CompressorEncryptorSink";
 
@@ -96,7 +91,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
 
     // This is used only for tests, otherwise this is being injected by the ingestion framework.
-    public CompressorEncryptorSink(Config config) {
+    public CompressorEncryptorSink(CompressorEncryptorSinkConfig config) {
         this.config = config;
     }
 
@@ -128,45 +123,60 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     public void configurePipeline(PipelineConfigurer pipelineConfigurer) throws IllegalArgumentException {
         super.configurePipeline(pipelineConfigurer);
 
+        /*
         Schema inputSchema = pipelineConfigurer.getStageConfigurer().getInputSchema();
         if (inputSchema != null) {
-            /*WordCount wordCount = new WordCount(config.field);
-            wordCount.validateSchema(inputSchema);*/
+            //WordCount wordCount = new WordCount(config.field);
+            //wordCount.validateSchema(inputSchema);
         }
         pipelineConfigurer.createDataset(config.tableName, KeyValueTable.class, DatasetProperties.EMPTY);
+        */
 
+        if (config.encryptFile() && StringUtils.isEmpty(config.getPublicKeyPath())) {
+            throw new IllegalArgumentException("Encryption enabled and PGP Public Key path is missing for CompressorEncryptorSink plugin. Please provide the same.");
+        }
     }
-
 
     @Override
     public void run(SparkExecutionPluginContext context, JavaRDD<StructuredRecord> javaRDD) throws IOException, PGPException {
-        LOG.info("Schema and filds are: " + config.compressor);
-        String fieldName = null;
-        if (config.compressor != null) {
-            String[] split = config.compressor.split(":");
-            fieldName = split[0];
+        PGPPublicKey encKey = null;
+
+        if (config.encryptFile()) {
+            try {
+                encKey = PGPExampleUtil.readPublicKey(config.getPublicKeyPath());
+                LOG.info("Retreived PublicKey");
+            } catch (PGPException ex) {
+                LOG.error(ex.getMessage());
+                throw new IOException(ex.getMessage());
+            }
         }
 
-        System.out.println("fieldName >>>>>>>>>" + fieldName);
-
         storage = getGoogleStorage();
+        LOG.info("Created GCS Storage");
+
         Bucket bucket = getBucket();
-
-        String finalFieldName = fieldName;
-
+        LOG.info("Created GCS Bucket");
 
         List<StructuredRecord> collect = javaRDD.collect();
-
-        PGPPublicKey encKey  = PGPExampleUtil.readPublicKey(config.publicKeyPath);
+        PGPPublicKey finalEncKey = encKey;
 
         collect.forEach(st -> {
+            FileListData fileListData = new FileListData(st);
+            if (fileListData.getRelativePath().isEmpty()) {
+                LOG.error("Relative path is missing");
+                return;
+            }
 
-            String fileName = st.get(finalFieldName);
-            String outFileName = null;
-            //File file = new File(fileName);
-            FileMetaData fileMetaData= null;
+            String outFileName = config.getPath() + fileListData.getRelativePath();
+            String contentType = "application/octet-stream";
+            if (config.encryptFile()) {
+                outFileName += ".pgp";
+                contentType = "application/pgp-encrypted";
+            }
+
+            FileMetaData fileMetaData = null;
+            String fileName = fileListData.getFullPath();
             if (fileName != null) {
-                outFileName = fileName + ".enc";
                 try {
                     fileMetaData = getFileMetaData(fileName, "");
                 } catch (IOException e) {
@@ -174,18 +184,16 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
                 }
 
             }
-
-            LOG.info("file Name >>> " + fileName);
+            LOG.info("Output File Name " + outFileName);
 
             BlobId blobId = BlobId.of(bucket.getName(), outFileName);
 
-            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
-
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
 
             InputStream inputStream = null;
 
             try {
-                inputStream = FileCompressEncrypt.gcsWriter(fileMetaData, encKey);
+                inputStream = FileCompressEncrypt.gcsWriter(fileMetaData, config.compressFile(), config.encryptFile(), finalEncKey);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -209,11 +217,8 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
                 e.printStackTrace();
             }
 
-
         });
-
     }
-
 
     private Storage getGoogleStorage() {
         Credentials credentials = null;
@@ -225,7 +230,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
         Storage storage = StorageOptions.newBuilder()
                 .setCredentials(credentials)
-                .setProjectId(config.project)
+                .setProjectId(config.getProject())
                 .build()
                 .getService();
 
@@ -260,7 +265,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     }
 
     private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return  new FileMetaData(filePath, conf);
+        return new FileMetaData(filePath, conf);
     }
 
     /**
@@ -284,10 +289,10 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     }
 
     private Bucket getBucket() {
-        String bucketName = config.path;
+        String bucketName = config.getPath();
         Bucket bucket = storage.get(bucketName);
         if (bucket == null) {
-            System.out.println("Creating new bucket.");
+            LOG.info("Creating new bucket.");
             bucket = storage.create(BucketInfo.of(bucketName));
         }
         return bucket;
