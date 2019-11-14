@@ -63,10 +63,6 @@
           {
             "name": "fullPath",
             "type": "string"
-          },
-          {
-            "name": "scheme",
-            "type": "string"
           }
         ]
       }

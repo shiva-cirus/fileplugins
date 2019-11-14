@@ -19,10 +19,13 @@ package io.cdap.plugin.file.ingest;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.Path;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,15 +39,13 @@ public class FileListData implements Comparable<FileListData> {
   public static final String FILE_SIZE = "fileSize";
   public static final String FULL_PATH = "fullPath";
   public static final String IS_DIR = "isDir";
-  public static final String SCHEME = "scheme";
 
   // The default schema that will be used to convert this object to a StructuredRecord.
   public static final Schema DEFAULT_SCHEMA =
       Schema.recordOf(
           "metadata",
           Schema.Field.of(FILE_NAME, Schema.of(Schema.Type.STRING)),
-          Schema.Field.of(FULL_PATH, Schema.of(Schema.Type.STRING)),
-          Schema.Field.of(SCHEME, Schema.of(Schema.Type.STRING)));
+          Schema.Field.of(FULL_PATH, Schema.of(Schema.Type.STRING)));
 
   // contains only the name of the file
   private final String fileName;
@@ -58,23 +59,19 @@ public class FileListData implements Comparable<FileListData> {
   // whether or not the file is a directory
   private final boolean isDir;
 
-  private final String scheme;
-
   /**
    * Constructs a FileListData instance given a FileStatus and source path. Override this method to
    * add additional credential fields to the instance.
    *
    * @param fileStatus The FileStatus object that contains raw file metadata for this object.
    * @param sourcePath The user specified path that was used to obtain this file.
-   * @param inputScheme reading files from local or hdfs file system.
    * @throws IOException
    */
-  public FileListData(FileStatus fileStatus, String sourcePath, String inputScheme) throws IOException {
+  public FileListData(FileStatus fileStatus, String sourcePath) throws IOException {
     fileName = fileStatus.getPath().getName();
     fullPath = fileStatus.getPath().toUri().getPath();
     isDir = fileStatus.isDirectory();
     fileSize = fileStatus.getLen();
-    scheme = inputScheme;
   }
 
   /**
@@ -88,7 +85,6 @@ public class FileListData implements Comparable<FileListData> {
     this.fullPath = record.get(FULL_PATH);
     this.fileSize = record.get(FILE_SIZE);
     this.isDir = record.get(IS_DIR);
-    this.scheme = record.get(SCHEME);
   }
 
   /**
@@ -101,7 +97,6 @@ public class FileListData implements Comparable<FileListData> {
     this.fullPath = dataInput.readUTF();
     this.fileSize = dataInput.readLong();
     this.isDir = dataInput.readBoolean();
-    this.scheme = dataInput.readUTF();
   }
 
   public String getFullPath() {
@@ -116,13 +111,12 @@ public class FileListData implements Comparable<FileListData> {
     return fileSize;
   }
 
-  public String getScheme() {
-    return scheme;
-  }
+
 
   public boolean isDir() {
     return isDir;
   }
+
 
   /** Converts to a StructuredRecord */
   public StructuredRecord toRecord() {
@@ -143,8 +137,7 @@ public class FileListData implements Comparable<FileListData> {
     StructuredRecord.Builder outputBuilder =
         StructuredRecord.builder(outputSchema)
             .set(FILE_NAME, fileName)
-            .set(FULL_PATH, fullPath)
-            .set(SCHEME, scheme);
+            .set(FULL_PATH, fullPath);
     addCredentialsToRecordBuilder(outputBuilder);
 
     return outputBuilder.build();
@@ -167,7 +160,6 @@ public class FileListData implements Comparable<FileListData> {
     dataOutput.writeUTF(getFullPath());
     dataOutput.writeLong(getFileSize());
     dataOutput.writeBoolean(isDir());
-    dataOutput.writeUTF(getScheme());
   }
 
   /**
