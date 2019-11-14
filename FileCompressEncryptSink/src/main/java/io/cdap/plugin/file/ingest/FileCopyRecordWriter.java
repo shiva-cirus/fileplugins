@@ -172,7 +172,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
     }
 
     // construct file paths for source and destination
-    Path srcPath = new Path(fileMetadata.getFullPath());
+    //Path srcPath = new Path(fileMetadata.getFullPath());
 
     String outFileName = destpath + fileMetadata.getRelativePath();
 

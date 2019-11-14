@@ -23,7 +23,7 @@ import java.util.Map;
 
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(fileCompressEncryptGCSBatchSink.NAME)
-@Description("Writes to a FileSet in text format.")
+@Description("Compress / Encrypt and Persist to GCS.")
 public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord, NullWritable, FileMetadata> {
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSink.class);

@@ -98,6 +98,8 @@ public class FileCopyOutputFormat extends OutputFormat {
         //  }
     }
 
+
+
     @Override
     public OutputCommitter getOutputCommitter(TaskAttemptContext taskAttemptContext) {
         // TODO: implement an OutputCommitter for file copying jobs, or investigate whether we can use FileOutputCommitter
@@ -127,7 +129,10 @@ public class FileCopyOutputFormat extends OutputFormat {
                 // no op
             }
         };
+
     }
+
+
 
     @Override
     public RecordWriter getRecordWriter(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
