@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,14 +51,19 @@ import java.util.Map;
  * to destination database
  */
 public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadata> {
-  private final boolean compression;
-  private final boolean encryption;
-  private final String bucketname;
-  private final String publicKeyPath;
-  private final String project;
-  private final String destpath;
+    private final boolean compression;
+    private final boolean encryption;
+    private final String bucketname;
+    private final String publicKeyPath;
+    private final String project;
+    private final String destpath;
+    private final String suffix;
+    private final String gcsserviceaccountjson;
 
-  private static final Logger LOG = LoggerFactory.getLogger(FileCopyRecordWriter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileCopyRecordWriter.class);
+    private PGPPublicKey encKey = null;
+    private Storage storage = null;
+    private Bucket bucket = null;
 
   /**
    * Construct a RecordWriter given user configurations.
@@ -66,19 +72,48 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
    * @throws IOException
    */
   public FileCopyRecordWriter(Configuration conf) throws IOException {
-    conf.set(String.format("fs.%s.impl.disable.cache", conf.get(FileCopyOutputFormat.FS_SCHEME)), String.valueOf(true));
 
-    // connect to destination filesystem with uri if it is provided
-    String uriString = conf.get(FileCopyOutputFormat.FS_HOST_URI, null);
-    if (uriString != null) {
-      destFileSystem = FileSystem.get(URI.create(uriString), conf);
+
+    if (conf.get(FileCopyOutputFormat.NAME_FILECOMPRESSION).equals("NONE")){
+        compression=false;
     } else {
-      destFileSystem = FileSystem.get(conf);
+        compression=true;
     }
 
-    // initialize other properties for writing to destination filesystem
-    basePath = conf.get(FileCopyOutputFormat.BASE_PATH);
-    sourceFilesystemMap = new HashMap<>();
+    if (conf.get(FileCopyOutputFormat.NAME_FILEENCRYPTION).equals("NONE")){
+          encryption=false;
+    } else {
+          encryption=true;
+    }
+
+    bucketname= conf.get( FileCopyOutputFormat.NAME_GCS_BUCKET,null );
+
+    publicKeyPath = conf.get( FileCopyOutputFormat.NAME_PGP_PUBKEY, null);
+
+    project = conf.get( FileCopyOutputFormat.NAME_GCS_PROJECTID, null);
+
+    gcsserviceaccountjson = conf.get( FileCopyOutputFormat.NAME_GCS_SERVICEACCOUNTJSON, null);
+
+    destpath = conf.get( FileCopyOutputFormat.NAME_GCS_DESTPATH , null);
+
+    suffix = conf.get( FileCopyOutputFormat.NAME_GCS_DESTPATH_SUFFIX , null);
+
+    if (encryption) {
+        //Read the Public Key to Encrypt Data
+
+        try {
+            encKey = PGPUtil.readPublicKey(publicKeyPath);
+        }catch (PGPException ex) {
+            LOG.error(ex.getMessage());
+            throw new IOException(ex.getMessage());
+        }
+    }
+
+    // Create GCS Storage using the credentials
+
+      storage = getGoogleStorage(gcsserviceaccountjson,project);
+      bucket = getBucket(storage,bucketname);
+
   }
 
 
@@ -129,100 +164,16 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
   public void write(NullWritable key, FileMetadata fileMetadata) throws IOException, InterruptedException {
 
     if (fileMetadata.getRelativePath().isEmpty()) {
-      // nothing to create
       return;
     }
 
     // construct file paths for source and destination
     Path srcPath = new Path(fileMetadata.getFullPath());
-    Path destPath = new Path(basePath, fileMetadata.getRelativePath());
-    FsPermission permission = new FsPermission((short) fileMetadata.getPermission());
 
-    // immediately return if we don't want to overwrite and file exists in destination
-    if (!enableOverwrite && destFileSystem.exists(destPath)) {
-      return;
-    }
+    String outFileName = destpath + fileMetadata.getRelativePath() + fileMetadata.getFileName();
 
-    // get source database connection
-    String uriString = fileMetadata.getHostURI();
-    if (!sourceFilesystemMap.containsKey(uriString)) {
-      sourceFilesystemMap.put(uriString, getSourceFilesystemConnection(fileMetadata));
-    }
-    FileSystem sourceFilesystem = sourceFilesystemMap.get(uriString);
-
-    // do some checks to see if we need to copy the file
-    if (fileMetadata.isDir()) {
-      // create an empty directory and return
-      if (!destFileSystem.exists(destPath) && sourceFilesystem.isDirectory(srcPath)) {
-        destFileSystem.mkdirs(destPath, permission);
-        if (preserveOwner) {
-          destFileSystem.setOwner(destPath, fileMetadata.getOwner(), fileMetadata.getGroup());
-        }
-      }
-      return;
-    } else if (!sourceFilesystem.exists(srcPath)) {
-      // file doesn't exist in source, return immediately
-      LOG.warn("{} doesn't exist in source filesystem.", fileMetadata.getFullPath());
-      return;
-    }
-
-    // data streaming
-    FSDataInputStream inputStream = sourceFilesystem.open(srcPath, bufferSize);
-    FSDataOutputStream outputStream = FileSystem.create(destFileSystem, destPath, permission);
-    try {
-      byte[] buf = new byte[bufferSize];
-      int len;
-      while ((len = inputStream.read(buf)) >= 0) {
-        outputStream.write(buf, 0, len);
-      }
-    } finally {
-      // we have to do this to make sure even if one stream fails to close, it
-      // still attempts to close the other stream
-      try {
-        inputStream.close();
-      } finally {
-        outputStream.close();
-        // the owner is set only if the output stream is sucessfully closed
-        if (preserveOwner) {
-          destFileSystem.setOwner(destPath, fileMetadata.getOwner(), fileMetadata.getGroup());
-        }
-      }
-    }
-
-
-
-
-    LOG.info("Schema and filds are: " + config.compressor);
-    String fieldName = null;
-    if (config.compressor != null) {
-      String[] split = config.compressor.split(":");
-      fieldName = split[0];
-    }
-
-    System.out.println("fieldName >>>>>>>>>" + fieldName);
-
-    PGPPublicKey encKey = null;
-
-    encKey = PGPUtil.readPublicKey(config.publicKeyPath);
-
-    storage = getGoogleStorage();
-    Bucket bucket = getBucket();
-
-    String finalFieldName = fieldName;
-    PGPPublicKey finalEncKey = encKey;
-
-    List<StructuredRecord> collect = javaRDD.collect();
-
-    collect.forEach(st -> {
-
-      String fileName = st.get(finalFieldName);
-      String outFileName = null;
-      File file = new File(fileName);
-      if (file != null) {
-        outFileName = file.getName() + ".enc";
-      }
-
-      LOG.info("file Name >>> " + fileName);
+    if ( encryption) outFileName+=".pgp";
+    LOG.info("Output File Name " + outFileName);
 
       BlobId blobId = BlobId.of(bucket.getName(), outFileName);
 
@@ -232,7 +183,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
       InputStream inputStream = null;
 
       try {
-        inputStream = FileCompressEncrypt.gcsWriter(fileName, finalEncKey);
+        inputStream = FileCompressEncrypt.gcsWriter(fileMetadata.getFullPath(),encKey );
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -257,23 +208,16 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
       }
 
 
-    });
-
-
-
-
-
-
-  }
+    }
 
   @Override
   public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     // attempts to close the other even if one fails
-    try {
-      destFileSystem.close();
-    } finally {
-      safelyCloseSourceFilesystems(sourceFilesystemMap.values().iterator());
-    }
+   // try {
+   //   destFileSystem.close();
+   // } finally {
+    //  safelyCloseSourceFilesystems(sourceFilesystemMap.values().iterator());
+   // }
   }
 
   /**
@@ -292,46 +236,5 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
     }
   }
 
-  /**
-   * This method identifies the source filesystem given FileMetadata and returns a FileSystem instance that will be used
-   * to read files from the source.
-   *
-   * @param metadata Contains the metadata of the file we wish to copy
-   * @return A FileSystem instance used to communicate with the source filesystem.
-   * @throws IOException
-   */
-  private FileSystem getSourceFilesystemConnection(FileMetadata metadata)
-    throws IOException {
-    Configuration conf = new Configuration(false);
-    conf.clear();
 
-    // always disable caching for source Filesystem objects
-    URI uri = URI.create(metadata.getHostURI());
-    String disableCacheName = String.format("fs.%s.impl.disable.cache", uri.getScheme());
-    conf.set(disableCacheName, String.valueOf(true));
-
-    switch (uri.getScheme()) {
-      case "s3a":
-        S3FileMetadata s3aFileMetadata = (S3FileMetadata) metadata;
-        S3MetadataInputFormat.setS3aAccessKeyId(conf, s3aFileMetadata.getAccessKeyId());
-        S3MetadataInputFormat.setS3aSecretKeyId(conf, s3aFileMetadata.getSecretKeyId());
-        S3MetadataInputFormat.setS3aFsClass(conf);
-        break;
-      case "s3n":
-        S3FileMetadata s3nFileMetadata = (S3FileMetadata) metadata;
-        S3MetadataInputFormat.setS3nAccessKeyId(conf, s3nFileMetadata.getAccessKeyId());
-        S3MetadataInputFormat.setS3nSecretKeyId(conf, s3nFileMetadata.getSecretKeyId());
-        S3MetadataInputFormat.setS3nFsClass(conf);
-        break;
-      case "file":
-      case "hdfs":
-        // TODO: figure out how to read from/write to remote HDFS. Currently this only supports writing to local HDFS.
-        conf = new Configuration();
-        break;
-      default:
-        throw new IOException(uri.getScheme() + " is not supported.");
-    }
-
-    return FileSystem.get(uri, conf);
-  }
 }

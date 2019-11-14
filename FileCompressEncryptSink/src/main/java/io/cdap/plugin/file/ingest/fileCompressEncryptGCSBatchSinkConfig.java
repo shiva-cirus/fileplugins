@@ -42,32 +42,32 @@ public abstract class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig
     }
   }
 
+  public static final String NAME_COMPRESSION = "compression";
+  public static final String NAME_ENCRYPTION = "compression";
+  public static final String NAME_PATH = "path";
+  public static final String NAME_SUFFIX = "suffix";
+  public static final String NAME_PROJECT = "project";
+  public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
+  public static final String AUTO_DETECT = "auto-detect";
+  public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
 
 
 
-    @Name("compression")
+    @Name(NAME_COMPRESSION)
     @Description("Specify the compression algorithm. If None is selected then data is not compressed.")
-    public String compression= CompressorType.ZIP.getType();
+    protected String compression= CompressorType.ZIP.getType();
 
-    @Name("encryption")
+    @Name(NAME_ENCRYPTION)
     @Description("Specify the encryption algorithm. If None is selected then data is not encrypted.")
-    public String encryption= EncryptionType.PGP.getType();
+    protected String encryption= EncryptionType.PGP.getType();
 
 
+    protected static final String SCHEME = "gs://";
 
-    public static final String NAME_PATH = "path";
-    public static final String NAME_SUFFIX = "suffix";
-    public static final String NAME_PROJECT = "project";
-    public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
-    public static final String AUTO_DETECT = "auto-detect";
-    public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
-
-
-    private static final String SCHEME = "gs://";
     @Name(NAME_PATH)
-    @Description("The path to write to. For example, gs://<bucket>/path/to/directory")
+    @Description("The path to write to. For example, gs://<bucket>")
     @Macro
-    private String path;
+    protected String path;
 
     @Name(NAME_SUFFIX)
     @Description("The time format for the output directory that will be appended to the path. " +
@@ -75,7 +75,7 @@ public abstract class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig
             "If not specified, nothing will be appended to the path.")
     @Nullable
     @Macro
-    private String suffix;
+    protected String suffix;
 
 
     @Name(NAME_PROJECT)
@@ -121,6 +121,20 @@ public abstract class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig
                 "Could not detect Google Cloud project id from the environment. Please specify a project id.");
       }
       return projectId;
+    }
+
+    public boolean compressFile(){
+         if ( Strings.isNullOrEmpty(compression) || compression.equals(CompressorType.NONE.getType()) )
+                return false;
+         return true;
+
+    }
+
+
+    public boolean encryptFile(){
+        if ( Strings.isNullOrEmpty(encryption) || compression.equals(EncryptionType.NONE.getType()) )
+            return false;
+        return true;
     }
 
     @Nullable
