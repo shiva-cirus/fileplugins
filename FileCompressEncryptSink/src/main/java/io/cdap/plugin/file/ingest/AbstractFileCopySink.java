@@ -70,10 +70,6 @@ public abstract class AbstractFileCopySink
     FileMetadata output;
     String fsScheme = URI.create((String) input.get(FileMetadata.HOST_URI)).getScheme();
     switch (fsScheme) {
-      case "s3n":
-      case "s3a":
-        output = new S3FileMetadata(input);
-        break;
       case "file":
       case "hdfs":
         output = new FileMetadata(input);

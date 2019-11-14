@@ -43,12 +43,7 @@ import java.util.Map;
 public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadata> {
   private final FileSystem destFileSystem;
   private final String basePath;
-  private final boolean enableOverwrite;
-  private final boolean preserveOwner;
-  private final int bufferSize;
 
-  // buffer size defaults to 1 MB
-  public static final int DEFAULT_BUFFER_SIZE = 1 << 20;
   private static final Logger LOG = LoggerFactory.getLogger(FileCopyRecordWriter.class);
 
   // a Key-Value map from host uri to Filesystem object
@@ -61,7 +56,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
    * @throws IOException
    */
   public FileCopyRecordWriter(Configuration conf) throws IOException {
-    // always disable caching when obtaining destination filesystem
     conf.set(String.format("fs.%s.impl.disable.cache", conf.get(FileCopyOutputFormat.FS_SCHEME)), String.valueOf(true));
 
     // connect to destination filesystem with uri if it is provided
@@ -74,9 +68,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
 
     // initialize other properties for writing to destination filesystem
     basePath = conf.get(FileCopyOutputFormat.BASE_PATH);
-    enableOverwrite = conf.getBoolean(FileCopyOutputFormat.ENABLE_OVERWRITE, false);
-    preserveOwner = conf.getBoolean(FileCopyOutputFormat.PRESERVE_OWNER, false);
-    bufferSize = conf.getInt(FileCopyOutputFormat.BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
     sourceFilesystemMap = new HashMap<>();
   }
 

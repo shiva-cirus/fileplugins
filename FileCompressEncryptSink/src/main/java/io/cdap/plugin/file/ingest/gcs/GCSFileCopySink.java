@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest.s3;
+package io.cdap.plugin.file.ingest.gcs;
 
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
@@ -25,20 +25,20 @@ import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.plugin.file.ingest.AbstractFileCopySink;
 import io.cdap.plugin.file.ingest.AbstractFileCopySinkConfig;
 import io.cdap.plugin.file.ingest.FileCopyOutputFormat;
-import org.apache.hadoop.fs.s3a.S3AFileSystem;
-import org.apache.hadoop.fs.s3native.NativeS3FileSystem;
+//import org.apache.hadoop.fs.gcs.GoogleHadoopFileSystem;
+
 
 /**
- * FileCopySink that writes to S3.
+ * FileCopySink that writes to GCS.
  */
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name("GCSFileCopySink")
 @Description("Copies files from remote filesystem to S3 Filesystem")
-public class S3FileCopySink extends AbstractFileCopySink {
+public class GCSFileCopySink extends AbstractFileCopySink {
 
-  private S3FileCopySinkConfig config;
+  private GCSFileCopySinkConfig config;
 
-  public S3FileCopySink(S3FileCopySinkConfig config) {
+  public GCSFileCopySink(GCSFileCopySinkConfig config) {
     super(config);
     this.config = config;
   }
@@ -46,29 +46,24 @@ public class S3FileCopySink extends AbstractFileCopySink {
   @Override
   public void prepareRun(BatchSinkContext context) throws Exception {
     super.prepareRun(context);
-    context.addOutput(Output.of(config.referenceName, new S3FileCopyOutputFormatProvider(config)));
+    context.addOutput(Output.of(config.referenceName, new GCSFileCopyOutputFormatProvider(config)));
   }
 
   /**
    * Adds necessary configuration resources and provides OutputFormat Class
    */
-  public class S3FileCopyOutputFormatProvider extends FileCopyOutputFormatProvider {
-    public S3FileCopyOutputFormatProvider(AbstractFileCopySinkConfig config) {
+  public class GCSFileCopyOutputFormatProvider extends FileCopyOutputFormatProvider {
+    public GCSFileCopyOutputFormatProvider(AbstractFileCopySinkConfig config) {
       super(config);
-      S3FileCopySinkConfig s3Config = (S3FileCopySinkConfig) config;
+      GCSFileCopySinkConfig gcsConfig = (GCSFileCopySinkConfig) config;
 
-      FileCopyOutputFormat.setFilesystemHostUri(conf, s3Config.filesystemURI);
+      FileCopyOutputFormat.setFilesystemHostUri(conf, gcsConfig.filesystemURI);
 
       switch (config.getScheme()) {
-        case "s3a" :
-          conf.put(S3MetadataInputFormat.S3A_ACCESS_KEY_ID, s3Config.accessKeyId);
-          conf.put(S3MetadataInputFormat.S3A_SECRET_KEY_ID, s3Config.secretKeyId);
-          conf.put(S3MetadataInputFormat.S3A_FS_CLASS, S3AFileSystem.class.getName());
-          break;
-        case "s3n" :
-          conf.put(S3MetadataInputFormat.S3N_ACCESS_KEY_ID, s3Config.accessKeyId);
-          conf.put(S3MetadataInputFormat.S3N_SECRET_KEY_ID, s3Config.secretKeyId);
-          conf.put(S3MetadataInputFormat.S3N_FS_CLASS, NativeS3FileSystem.class.getName());
+        case "gcs" :
+          conf.put(GCSMetadataInputFormat.GCS_PROJECT_ID, gcsConfig.gcsprojectid);
+          conf.put(GCSMetadataInputFormat.GCS_SERVICE_ACCOUNT_JSON, gcsConfig.gcsserviceaccountjson);
+         // conf.put(GCSMetadataInputFormat.GCS_FS_CLASS, GoogleHadoopFileSystem.class.getName());
           break;
         default:
           throw new IllegalArgumentException("Scheme must be either s3a or s3n.");

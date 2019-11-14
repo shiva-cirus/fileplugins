@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest.s3;
+package io.cdap.plugin.file.ingest.gcs;
 
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -48,11 +48,11 @@ import java.util.List;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name("GCSFileMetadataSource")
 @Description("Reads file metadata from S3 bucket.")
-public class S3FileMetadataSource extends AbstractFileMetadataSource<S3FileMetadata> {
-  private S3FileMetadataSourceConfig config;
-  private static final Logger LOG = LoggerFactory.getLogger(S3FileMetadataSource.class);
+public class GCSFileMetadataSource extends AbstractFileMetadataSource<GCSFileMetadata> {
+  private GCSFileMetadataSourceConfig config;
+  private static final Logger LOG = LoggerFactory.getLogger(GCSFileMetadataSource.class);
 
-  public S3FileMetadataSource(S3FileMetadataSourceConfig config) {
+  public GCSFileMetadataSource(GCSFileMetadataSourceConfig config) {
     super(config);
     this.config = config;
   }
@@ -61,7 +61,7 @@ public class S3FileMetadataSource extends AbstractFileMetadataSource<S3FileMetad
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     super.configurePipeline(pipelineConfigurer);
     List<Schema.Field> fieldList = new ArrayList<>(FileMetadata.DEFAULT_SCHEMA.getFields());
-    fieldList.addAll(S3FileMetadata.CREDENTIAL_SCHEMA.getFields());
+    fieldList.addAll(GCSFileMetadata.CREDENTIAL_SCHEMA.getFields());
     pipelineConfigurer.getStageConfigurer().setOutputSchema(Schema.recordOf("S3Schema", fieldList));
   }
 
@@ -73,35 +73,30 @@ public class S3FileMetadataSource extends AbstractFileMetadataSource<S3FileMetad
 
     // initialize configuration
     setDefaultConf(conf);
-    S3MetadataInputFormat.setURI(conf, config.filesystemURI);
+    GCSMetadataInputFormat.setURI(conf, config.filesystemURI);
     String fsScheme = URI.create(config.filesystemURI).getScheme();
     switch (fsScheme) {
-      case "s3a":
-        S3MetadataInputFormat.setS3aAccessKeyId(conf, config.accessKeyId);
-        S3MetadataInputFormat.setS3aSecretKeyId(conf, config.secretKeyId);
-        S3MetadataInputFormat.setS3aFsClass(conf);
-        break;
-      case "s3n":
-        S3MetadataInputFormat.setS3nAccessKeyId(conf, config.accessKeyId);
-        S3MetadataInputFormat.setS3nSecretKeyId(conf, config.secretKeyId);
-        S3MetadataInputFormat.setS3nFsClass(conf);
+      case "gcs":
+        GCSMetadataInputFormat.setGcsProjectId(conf, config.gcsprojectid);
+        GCSMetadataInputFormat.setGcsServiceAccountJson(conf, config.gcsserviceaccountjson);
+        GCSMetadataInputFormat.setGcsFsClassFsClass(conf);
         break;
       default:
         throw new IllegalArgumentException("Scheme must be either s3a or s3n.");
     }
 
-    context.setInput(Input.of(config.referenceName, new SourceInputFormatProvider(S3MetadataInputFormat.class, conf)));
+    context.setInput(Input.of(config.referenceName, new SourceInputFormatProvider(GCSMetadataInputFormat.class, conf)));
   }
 
   @Override
-  public void transform(KeyValue<NullWritable, S3FileMetadata> input, Emitter<StructuredRecord> emitter) {
+  public void transform(KeyValue<NullWritable, GCSFileMetadata> input, Emitter<StructuredRecord> emitter) {
     emitter.emit(input.getValue().toRecord());
   }
 
   /**
    * Configurations required for connecting to S3Filesystem.
    */
-  public class S3FileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
+  public class GCSFileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
 
     // configurations for S3
     @Macro
@@ -109,20 +104,20 @@ public class S3FileMetadataSource extends AbstractFileMetadataSource<S3FileMetad
     public String filesystemURI;
 
     @Macro
-    @Description("Your AWS Access Key Id")
-    public String accessKeyId;
+    @Description("Your GCS Project ID")
+    public String gcsprojectid;
 
     @Macro
-    @Description("Your AWS Secret Key Id")
-    public String secretKeyId;
+    @Description("Your GCS Service Account JSON File")
+    public String gcsserviceaccountjson;
 
-    public S3FileMetadataSourceConfig(String name, String sourcePaths, Integer maxSplitSize,
-                                      String filesystemURI, String accessKeyId,
-                                      String secretKeyId) {
+    public GCSFileMetadataSourceConfig(String name, String sourcePaths, Integer maxSplitSize,
+                                      String filesystemURI, String gcsprojectid,
+                                      String gcsserviceaccountjson) {
       super(name, sourcePaths, maxSplitSize);
       this.filesystemURI = filesystemURI;
-      this.accessKeyId = accessKeyId;
-      this.secretKeyId = secretKeyId;
+      this.gcsprojectid = gcsprojectid;
+      this.gcsserviceaccountjson = gcsserviceaccountjson;
     }
 
     @Override

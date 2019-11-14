@@ -33,9 +33,6 @@ import java.util.Map;
  */
 public class FileCopyOutputFormat extends OutputFormat {
   public static final String BASE_PATH = "base.path";
-  public static final String ENABLE_OVERWRITE = "enable.overwrite";
-  public static final String PRESERVE_OWNER = "preserve.owner";
-  public static final String BUFFER_SIZE = "buffer.size";
   public static final String FS_HOST_URI = "filesystem.host.uri";
   public static final String FS_SCHEME = "filesystem.scheme";
 
@@ -43,18 +40,6 @@ public class FileCopyOutputFormat extends OutputFormat {
 
   public static void setBasePath(Map<String, String> conf, String value) {
     conf.put(BASE_PATH, value);
-  }
-
-  public static void setEnableOverwrite(Map<String, String> conf, String value) {
-    conf.put(ENABLE_OVERWRITE, value);
-  }
-
-  public static void setPreserveFileOwner(Map<String, String> conf, String value) {
-    conf.put(PRESERVE_OWNER, value);
-  }
-
-  public static void setBufferSize(Map<String, String> conf, String value) {
-    conf.put(BUFFER_SIZE, value);
   }
 
   public static void setFilesystemHostUri(Map<String, String> conf, String value) {
