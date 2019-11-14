@@ -55,8 +55,8 @@ public abstract class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig
 
 
 
-    private static final String NAME_PATH = "path";
-    private static final String NAME_SUFFIX = "suffix";
+    public static final String NAME_PATH = "path";
+    public static final String NAME_SUFFIX = "suffix";
     public static final String NAME_PROJECT = "project";
     public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
     public static final String AUTO_DETECT = "auto-detect";

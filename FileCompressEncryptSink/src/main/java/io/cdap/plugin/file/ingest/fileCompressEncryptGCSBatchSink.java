@@ -68,37 +68,6 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
         // clean up any resources created by initialize
     }
 
-/*
-
-    private Storage getGoogleStorage() {
-        Credentials credentials = null;
-        try {
-            credentials = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Storage storage = StorageOptions.newBuilder()
-                .setCredentials(credentials)
-                .setProjectId(config.project)
-                .build()
-                .getService();
-
-        return storage;
-
-    }
-
-    private Bucket getBucket() {
-        String bucketName = config.getBucket();
-        Bucket bucket = storage.get(bucketName);
-        if (bucket == null) {
-            System.out.println("Creating new bucket.");
-            bucket = storage.create(BucketInfo.of(bucketName));
-        }
-        return bucket;
-    }
-
-*/
     @Override
     public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileMetadata>> emitter) throws Exception {
         FileMetadata output;

@@ -16,13 +16,11 @@
 
 package io.cdap.plugin.file.ingest;
 
+import com.google.auth.Credentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.WriteChannel;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.*;
 import io.cdap.cdap.api.data.format.StructuredRecord;
-import io.cdap.plugin.file.ingest.s3.S3FileMetadata;
-import io.cdap.plugin.file.ingest.s3.S3MetadataInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -35,8 +33,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import io.cdap.plugin.file.ingest.encryption.*;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -51,13 +50,14 @@ import java.util.Map;
  * to destination database
  */
 public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadata> {
-  private final FileSystem destFileSystem;
-  private final String basePath;
+  private final boolean compression;
+  private final boolean encryption;
+  private final String bucketname;
+  private final String publicKeyPath;
+  private final String project;
+  private final String destpath;
 
   private static final Logger LOG = LoggerFactory.getLogger(FileCopyRecordWriter.class);
-
-  // a Key-Value map from host uri to Filesystem object
-  private Map<String, FileSystem> sourceFilesystemMap;
 
   /**
    * Construct a RecordWriter given user configurations.
@@ -80,6 +80,41 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
     basePath = conf.get(FileCopyOutputFormat.BASE_PATH);
     sourceFilesystemMap = new HashMap<>();
   }
+
+
+
+  private Storage getGoogleStorage(String serviceAccountJSON, String project) {
+    Credentials credentials = null;
+    try {
+      credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    Storage storage = StorageOptions.newBuilder()
+            .setCredentials(credentials)
+            .setProjectId(project)
+            .build()
+            .getService();
+
+    return storage;
+
+  }
+
+  private Bucket getBucket(Storage storage,String bucketname) {
+
+    Bucket bucket = storage.get(bucketname);
+    if (bucket == null) {
+      System.out.println("Creating new bucket.");
+      bucket = storage.create(BucketInfo.of(bucketname));
+    }
+    return bucket;
+  }
+
+
+
+
+
 
   /**
    * This method connects to the source filesystem and copies the file specified by the FileMetadata input to the
@@ -168,7 +203,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
 
     PGPPublicKey encKey = null;
 
-    encKey = PGPExampleUtil.readPublicKey(config.publicKeyPath);
+    encKey = PGPUtil.readPublicKey(config.publicKeyPath);
 
     storage = getGoogleStorage();
     Bucket bucket = getBucket();
