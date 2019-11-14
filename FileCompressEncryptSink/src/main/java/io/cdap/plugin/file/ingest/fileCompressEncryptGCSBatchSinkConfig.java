@@ -14,7 +14,7 @@ import java.io.IOException;
 import com.google.cloud.ServiceOptions;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 
-public abstract class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
+public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
 
   private enum CompressorType {
