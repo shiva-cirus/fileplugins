@@ -31,7 +31,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.cdap.plugin.file.ingest.encryption.*;
+import io.cdap.plugin.file.ingest.batchsink.encryption.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
