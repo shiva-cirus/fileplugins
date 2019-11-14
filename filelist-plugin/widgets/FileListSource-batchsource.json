@@ -63,6 +63,14 @@
           {
             "name": "fullPath",
             "type": "string"
+          },
+          {
+            "name": "relativePath",
+            "type": "string"
+          },
+          {
+            "name": "hostURI",
+            "type": "string"
           }
         ]
       }
