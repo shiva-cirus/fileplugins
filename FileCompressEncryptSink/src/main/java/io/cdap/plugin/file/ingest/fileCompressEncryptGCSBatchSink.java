@@ -1,49 +1,23 @@
 package io.cdap.plugin.file.ingest;
 
 
-import com.google.auth.Credentials;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.ServiceOptions;
-import com.google.cloud.WriteChannel;
-import com.google.cloud.storage.*;
-import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
-import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.OutputFormatProvider;
 import io.cdap.cdap.api.data.format.StructuredRecord;
-import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.api.dataset.DatasetProperties;
-import io.cdap.cdap.api.dataset.lib.FileSetArguments;
 import io.cdap.cdap.api.dataset.lib.KeyValue;
-import io.cdap.cdap.api.dataset.lib.KeyValueTable;
-import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.Emitter;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
-import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
-import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
-import io.cdap.plugin.file.ingest.utils.GCSPath;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
-import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -128,15 +102,7 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     @Override
     public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileMetadata>> emitter) throws Exception {
         FileMetadata output;
-        String fsScheme = URI.create((String) input.get(FileMetadata.HOST_URI)).getScheme();
-        switch (fsScheme) {
-            case "file":
-            case "hdfs":
-                output = new FileMetadata(input);
-                break;
-            default:
-                throw new IllegalArgumentException(fsScheme + "is not supported.");
-        }
+        output = new FileMetadata(input);
         emitter.emit(new KeyValue<NullWritable, FileMetadata>(null, output));
     }
 
@@ -147,19 +113,10 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     public class FileCopyOutputFormatProvider implements OutputFormatProvider {
         protected final Map<String, String> conf;
 
-        public FileCopyOutputFormatProvider(AbstractFileCopySinkConfig config) {
+        public FileCopyOutputFormatProvider(fileCompressEncryptGCSBatchSinkConfig config) {
             this.conf = new HashMap<>();
-            FileCopyOutputFormat.setBasePath(conf, config.basePath);
-            FileCopyOutputFormat.setEnableOverwrite(conf, config.enableOverwrite.toString());
-            FileCopyOutputFormat.setPreserveFileOwner(conf, config.preserveFileOwner.toString());
-            FileCopyOutputFormat.setFilesystemScheme(conf, config.getScheme());
-
-            if (config.bufferSize != null) {
-                // bufferSize is in megabytes
-                FileCopyOutputFormat.setBufferSize(conf, String.valueOf(config.bufferSize << 20));
-            } else {
-                FileCopyOutputFormat.setBufferSize(conf, String.valueOf(FileCopyRecordWriter.DEFAULT_BUFFER_SIZE));
-            }
+          //  FileCopyOutputFormat.setBasePath(conf, config.);
+           // FileCopyOutputFormat.setFilesystemScheme(conf, config.getScheme());
         }
 
         @Override
