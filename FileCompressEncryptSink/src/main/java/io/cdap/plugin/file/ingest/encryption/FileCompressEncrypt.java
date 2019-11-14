@@ -7,7 +7,9 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.apache.commons.io.IOUtils;
+import io.cdap.plugin.file.ingest.utils.FileMetaData;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
@@ -33,6 +35,14 @@ import java.util.Iterator;
 public class FileCompressEncrypt {
     private static final int INT = 1 << 16;
     static Storage storage = null;
+    static Configuration conf;
+
+    static {
+        conf = new Configuration();
+
+        conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+        conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+    }
 
     public FileCompressEncrypt(String pathToConfig, String projectId) throws IOException {
         Credentials credentials = GoogleCredentials.fromStream(new FileInputStream(pathToConfig));
@@ -151,7 +161,7 @@ public class FileCompressEncrypt {
 
     private static void encryptFile(
             OutputStream out,
-            String fileName,
+            FileMetaData fileMetaData,
             PGPPublicKey encKey,
             boolean armor,
             boolean withIntegrityCheck)
@@ -170,8 +180,8 @@ public class FileCompressEncrypt {
             PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
                     PGPCompressedData.ZIP);
 
-            PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
-
+            //PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
+            writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
             comData.close();
 
             cOut.close();
@@ -192,14 +202,15 @@ public class FileCompressEncrypt {
         decryptFile(inFile, "PGP1D0.skr", privateKeyPassword.toCharArray(), "abc11.txt");
     }
 
-    public static void writeFileToLiteralData(OutputStream var0, char var1, File var2, byte[] var3) throws IOException {
+    public static void writeFileToLiteralData(OutputStream var0, char var1, FileMetaData fileMetaData, byte[] var3) throws IOException {
         PGPLiteralDataGenerator var4 = new PGPLiteralDataGenerator();
-        OutputStream var5 = var4.open(var0, var1, var2.getName(), new Date(var2.lastModified()), var3);
-        pipeFileContents(var2, var5, var3.length);
+        OutputStream var5 = var4.open(var0, var1, fileMetaData.getPath().getName(), new Date(fileMetaData.getLastModifiedTime()), var3);
+        pipeFileContents(fileMetaData, var5, var3.length);
     }
 
-    private static void pipeFileContents(File var0, OutputStream var1, int var2) throws IOException {
-        FileInputStream var3 = new FileInputStream(var0);
+    private static void pipeFileContents(FileMetaData var0, OutputStream var1, int var2) throws IOException {
+        //FileInputStream var3 = new FileInputStream(var0);
+        FSDataInputStream var3 = var0.getFileSystem().open(var0.getPath());
         byte[] var4 = new byte[var2];
 
         int var5;
@@ -211,8 +222,11 @@ public class FileCompressEncrypt {
         var3.close();
     }
 
+    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
+        return  new FileMetaData(filePath, conf);
+    }
 
-    public static InputStream gcsWriter(String inFileName, PGPPublicKey encKey) throws IOException {
+    public static InputStream gcsWriter(FileMetaData fileMetaData, PGPPublicKey encKey) throws IOException {
         //InputStream inputStream = new FileInputStream(inFileName);
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
@@ -221,7 +235,7 @@ public class FileCompressEncrypt {
         new Thread(
                 () -> {
                     try {
-                        encryptFile(outPipe, inFileName, encKey, false, true);
+                        encryptFile(outPipe, fileMetaData, encKey, false, true);
                         //Thread.sleep(10000);
                         //outPipe.close();
                     } catch (IOException e) {
@@ -247,7 +261,8 @@ public class FileCompressEncrypt {
 
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
-        InputStream inputStream = gcsWriter(inFileName, encKey);
+        FileMetaData fileMetaData = new FileMetaData(inFileName, conf);
+        InputStream inputStream = gcsWriter(fileMetaData, encKey);
         /*try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -274,7 +289,7 @@ public class FileCompressEncrypt {
 
         //InputStream inputStream = gcsWriter( inFileName, encKey);
 
-        encryptFile(new FileOutputStream(new File(outFileName)), inFileName, encKey, false, true);
+        //encryptFile(new FileOutputStream(new File(outFileName)), inFileName, encKey, false, true);
 
 
     }
@@ -295,7 +310,7 @@ public class FileCompressEncrypt {
         encryptionCompressAndUploadGCSWithThread(inFileName, bucketName, uploadFileName);
 
 
-        //decryption("/Users/vikaskumar/Downloads/largefile_2gb_cp.asc");
+        decryption("/Users/vikaskumar/Downloads/pkg1_vikas.csv.asc");
         //decryption("output/pkg2_vikas.csv.asc");
 
     }

@@ -38,10 +38,10 @@ import io.cdap.cdap.etl.api.batch.SparkPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkSink;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
-import io.cdap.plugin.file.ingest.utils.FileEncryptTest;
+import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import io.cdap.plugin.file.ingest.utils.GCSPath;
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaRDD;
 import org.bouncycastle.openpgp.PGPException;
@@ -50,15 +50,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.*;
-import java.net.URI;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Compresses the configured fields using the algorithms specified.
@@ -72,7 +71,9 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
     private Config config = null;
 
-    Configuration conf= null;
+    static Configuration conf = null;
+
+
 
     public static final String NAME = "CompressorEncryptorSink";
 
@@ -85,6 +86,13 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     private final Map<String, CompressorType> compMap = new HashMap<>();
 
     private static Storage storage;
+
+    static {
+        conf = new Configuration();
+
+        conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+        conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+    }
 
 
     // This is used only for tests, otherwise this is being injected by the ingestion framework.
@@ -141,25 +149,30 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
         System.out.println("fieldName >>>>>>>>>" + fieldName);
 
-        PGPPublicKey encKey = null;
-
-        encKey = PGPExampleUtil.readPublicKey(config.publicKeyPath);
-
         storage = getGoogleStorage();
         Bucket bucket = getBucket();
 
         String finalFieldName = fieldName;
-        PGPPublicKey finalEncKey = encKey;
+
 
         List<StructuredRecord> collect = javaRDD.collect();
+
+        PGPPublicKey encKey  = PGPExampleUtil.readPublicKey(config.publicKeyPath);
 
         collect.forEach(st -> {
 
             String fileName = st.get(finalFieldName);
             String outFileName = null;
-            File file = new File(fileName);
-            if (file != null) {
-                outFileName = file.getName() + ".enc";
+            //File file = new File(fileName);
+            FileMetaData fileMetaData= null;
+            if (fileName != null) {
+                outFileName = fileName + ".enc";
+                try {
+                    fileMetaData = getFileMetaData(fileName, "");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
 
             LOG.info("file Name >>> " + fileName);
@@ -172,7 +185,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             InputStream inputStream = null;
 
             try {
-                inputStream = FileCompressEncrypt.gcsWriter(fileName, finalEncKey);
+                inputStream = FileCompressEncrypt.gcsWriter(fileMetaData, encKey);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -221,7 +234,6 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     }
 
 
-
     @Override
     public void prepareRun(SparkPluginContext sparkPluginContext) throws Exception {
         //sparkPluginContext.getInputSchema();
@@ -247,6 +259,9 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         }*/
     }
 
+    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
+        return  new FileMetaData(filePath, conf);
+    }
 
     /**
      * Enum specifying the compressor type.

@@ -22,7 +22,7 @@
   <name>Whole File Ingest Plugins</name>
   <groupId>io.cdap.plugin</groupId>
   <artifactId>file-compress-encript-sink</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <licenses>
@@ -87,6 +87,11 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpg-jdk15on</artifactId>
       <version>1.58</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <version>${hadoop.version}</version>
     </dependency>
     <!--<dependency>
       <groupId>org.apache.commons</groupId>
