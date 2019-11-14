@@ -34,6 +34,7 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.SparkExecutionPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkSink;
+import io.cdap.plugin.file.ingest.common.FileListData;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;

@@ -1,4 +1,4 @@
-package io.cdap.plugin.file.ingest.sparksink;
+package io.cdap.plugin.file.ingest.common;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;

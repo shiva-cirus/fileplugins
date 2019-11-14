@@ -13,7 +13,7 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
-import io.cdap.plugin.file.ingest.sparksink.FileListData;
+import io.cdap.plugin.file.ingest.common.FileListData;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,10 +99,6 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
             FileCopyOutputFormat.setPGPPubKey(conf,config.getPublicKeyPath());
             FileCopyOutputFormat.setGCSProjectID(conf,config.getProject());
             FileCopyOutputFormat.setGCSServiceAccount(conf,config.getServiceAccountFilePath());
-
-
-          //  FileCopyOutputFormat.setBasePath(conf, config.);
-           // FileCopyOutputFormat.setFilesystemScheme(conf, config.getScheme());
         }
 
         @Override

@@ -22,7 +22,7 @@ import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
-import io.cdap.plugin.file.ingest.sparksink.FileListData;
+import io.cdap.plugin.file.ingest.common.FileListData;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -79,27 +79,38 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
 
     if (conf.get(FileCopyOutputFormat.NAME_FILECOMPRESSION).equals("NONE")){
         compression=false;
+        LOG.info("Compression is set to false");
     } else {
         compression=true;
+        LOG.info("Compression is set to true");
     }
 
     if (conf.get(FileCopyOutputFormat.NAME_FILEENCRYPTION).equals("NONE")){
           encryption=false;
+        LOG.info("Encryption is set to false");
     } else {
           encryption=true;
+        LOG.info("Encryption is set to true");
+
     }
 
     bucketname= conf.get( FileCopyOutputFormat.NAME_GCS_BUCKET,null );
+    LOG.info("Bucket Name - "+bucketname);
 
     publicKeyPath = conf.get( FileCopyOutputFormat.NAME_PGP_PUBKEY, null);
+      LOG.info("PubKeyPath - "+publicKeyPath);
 
     project = conf.get( FileCopyOutputFormat.NAME_GCS_PROJECTID, null);
+    LOG.info("GCS Project ID - "+project);
 
     gcsserviceaccountjson = conf.get( FileCopyOutputFormat.NAME_GCS_SERVICEACCOUNTJSON, null);
+    LOG.info("GCS Service Account-"+gcsserviceaccountjson);
 
     destpath = conf.get( FileCopyOutputFormat.NAME_GCS_DESTPATH , null);
+    LOG.info("Dest Path - "+destpath);
 
     suffix = conf.get( FileCopyOutputFormat.NAME_GCS_DESTPATH_SUFFIX , null);
+      LOG.info("Suffix - "+suffix);
 
     if (encryption) {
         //Read the Public Key to Encrypt Data
