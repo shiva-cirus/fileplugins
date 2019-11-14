@@ -104,7 +104,7 @@ public class FileCompressEncrypt {
             while (sKey == null && it.hasNext()) {
                 pbe = (PGPPublicKeyEncryptedData) it.next();
 
-                sKey = PGPExampleUtil.findSecretKey(pgpSec, pbe.getKeyID(), passwd);
+                sKey = PGPCertUtil.findSecretKey(pgpSec, pbe.getKeyID(), passwd);
             }
 
             if (sKey == null) {
@@ -332,7 +332,7 @@ public class FileCompressEncrypt {
     public static void encryptionCompressAndUploadGCSWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
 
 
-        PGPPublicKey encKey = PGPExampleUtil.readPublicKey("PGP1D0.pkr");
+        PGPPublicKey encKey = PGPCertUtil.readPublicKey("PGP1D0.pkr");
 
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
@@ -360,7 +360,7 @@ public class FileCompressEncrypt {
     private static void encOnLocalFileSys(String inFileName, String outFileName) throws IOException, NoSuchProviderException, PGPException {
 
 
-        PGPPublicKey encKey = PGPExampleUtil.readPublicKey("PGP1D0.pkr");
+        PGPPublicKey encKey = PGPCertUtil.readPublicKey("PGP1D0.pkr");
 
         //InputStream inputStream = gcsWriter( inFileName, encKey);
 

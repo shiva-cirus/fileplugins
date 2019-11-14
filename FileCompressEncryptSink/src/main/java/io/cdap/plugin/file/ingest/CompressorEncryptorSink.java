@@ -1,5 +1,5 @@
 /*
- * Copyright © 2015 Cask Data, Inc.
+ *
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -35,7 +35,7 @@ import io.cdap.cdap.etl.api.batch.SparkExecutionPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkPluginContext;
 import io.cdap.cdap.etl.api.batch.SparkSink;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
-import io.cdap.plugin.file.ingest.encryption.PGPExampleUtil;
+import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import io.cdap.plugin.file.ingest.utils.GCSPath;
 import org.apache.commons.lang3.StringUtils;
@@ -60,7 +60,7 @@ import java.util.Map;
  */
 @Plugin(type = SparkSink.PLUGIN_TYPE)
 @Name(CompressorEncryptorSink.NAME)
-@Description("Compresses configured fields using the algorithms specified.")
+@Description("File - Compress Encrypt and Persist to GCS Bucket.")
 public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
     private static final Logger LOG = LoggerFactory.getLogger(CompressorEncryptorSink.class);
@@ -72,11 +72,6 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
     public static final String NAME = "CompressorEncryptorSink";
 
-    // Output Schema associated with transform output.
-    private Schema outSchema;
-
-    // Output Field name to type map
-    private Map<String, Schema.Type> outSchemaMap = new HashMap<>();
 
     private final Map<String, CompressorType> compMap = new HashMap<>();
 
@@ -84,7 +79,6 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
     static {
         conf = new Configuration();
-
         conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
         conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
     }
@@ -143,7 +137,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
 
         if (config.encryptFile()) {
             try {
-                encKey = PGPExampleUtil.readPublicKey(config.getPublicKeyPath());
+                encKey = PGPCertUtil.readPublicKey(config.getPublicKeyPath());
                 LOG.info("Retreived PublicKey");
             } catch (PGPException ex) {
                 LOG.error(ex.getMessage());
@@ -167,7 +161,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
                 return;
             }
 
-            String outFileName = config.getPath() + fileListData.getRelativePath();
+            String outFileName = config.getDestPath() + fileListData.getRelativePath();
             String contentType = "application/octet-stream";
             if (config.encryptFile()) {
                 outFileName += ".pgp";
@@ -289,7 +283,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
     }
 
     private Bucket getBucket() {
-        String bucketName = config.getPath();
+        String bucketName = config.getBucket();
         Bucket bucket = storage.get(bucketName);
         if (bucket == null) {
             LOG.info("Creating new bucket.");

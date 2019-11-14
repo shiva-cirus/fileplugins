@@ -8,7 +8,7 @@ import java.io.*;
 import java.security.NoSuchProviderException;
 import java.util.Iterator;
 
-public class PGPExampleUtil {
+public class PGPCertUtil {
     static byte[] compressFile(String fileName, int algorithm) throws IOException {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(algorithm);

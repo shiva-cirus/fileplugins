@@ -87,6 +87,10 @@ public class CompressorEncryptorSinkConfig extends PluginConfig {
     @Nullable
     protected String publicKeyPath;
 
+    public String getDestPath(){
+        return GCSPath.from(path).getName();
+    }
+
     public String getBucket() {
         return GCSPath.from(path).getBucket();
     }
