@@ -1,5 +1,5 @@
 
-package io.cdap.plugin.file.ingest;
+package io.cdap.plugin.file.ingest.batchsink;
 
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
@@ -7,7 +7,7 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 
 import io.cdap.cdap.api.plugin.PluginConfig;
-import io.cdap.plugin.file.ingest.utils.GCSPath;
+import io.cdap.plugin.file.ingest.batchsink.utils.GCSPath;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

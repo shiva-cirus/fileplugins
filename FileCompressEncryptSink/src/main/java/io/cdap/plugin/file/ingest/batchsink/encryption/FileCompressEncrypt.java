@@ -1,4 +1,4 @@
-package io.cdap.plugin.file.ingest.encryption;
+package io.cdap.plugin.file.ingest.batchsink.encryption;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;

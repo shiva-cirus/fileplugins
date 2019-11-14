@@ -1,4 +1,4 @@
-package io.cdap.plugin.file.ingest;
+package io.cdap.plugin.file.ingest.batchsink;
 
 
 import io.cdap.cdap.api.annotation.Description;
@@ -17,14 +17,13 @@ import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
 
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(fileCompressEncryptGCSBatchSink.NAME)
-@Description("Compress / Encrypt and Persist to GCS.")
+@Description("File Compress / Encrypt and Persist to GCS.")
 public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord, NullWritable, FileMetadata> {
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSink.class);

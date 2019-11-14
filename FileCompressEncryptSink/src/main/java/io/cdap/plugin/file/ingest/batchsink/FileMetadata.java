@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest;
+package io.cdap.plugin.file.ingest.batchsink;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
@@ -258,7 +258,7 @@ public class FileMetadata implements Comparable<FileMetadata> {
      *        -1 if this instance is smaller than the other file.
      */
     @Override
-    public int compareTo(io.cdap.plugin.file.ingest.FileMetadata o) {
+    public int compareTo(FileMetadata o) {
       return Long.compare(fileSize, o.getFileSize());
     }
 

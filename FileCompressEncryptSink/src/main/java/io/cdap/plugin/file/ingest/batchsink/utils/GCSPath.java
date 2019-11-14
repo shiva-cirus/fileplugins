@@ -15,7 +15,7 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest.utils;
+package io.cdap.plugin.file.ingest.batchsink.utils;
 
 
 import java.io.UnsupportedEncodingException;

@@ -1,4 +1,4 @@
-package io.cdap.plugin.file.ingest.encryption;
+package io.cdap.plugin.file.ingest.batchsink.encryption;
 
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;

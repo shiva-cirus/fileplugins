@@ -14,19 +14,16 @@
  * the License.
  */
 
-package io.cdap.plugin.file.ingest;
+package io.cdap.plugin.file.ingest.batchsink;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
-import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.plugin.file.ingest.batchsink.encryption.FileCompressEncrypt;
+import io.cdap.plugin.file.ingest.batchsink.encryption.PGPUtil;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -35,16 +32,12 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.cdap.plugin.file.ingest.encryption.*;
-import java.io.File;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  * The record writer that takes file metadata and streams data from source database
