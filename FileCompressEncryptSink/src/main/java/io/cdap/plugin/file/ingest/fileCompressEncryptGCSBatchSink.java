@@ -4,6 +4,7 @@ package io.cdap.plugin.file.ingest;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
+import io.cdap.cdap.api.data.batch.Output;
 import io.cdap.cdap.api.data.batch.OutputFormatProvider;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.dataset.lib.KeyValue;
@@ -46,6 +47,7 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     // as well as any arguments the input should use. It is called by the client that is submitting the batch job.
     @Override
     public void prepareRun(BatchSinkContext context) throws Exception {
+        context.addOutput(Output.of("FileCopyOutputFormatProvider", new FileCopyOutputFormatProvider(config)));
         LOG.info("Completed prepareRun");
     }
 
