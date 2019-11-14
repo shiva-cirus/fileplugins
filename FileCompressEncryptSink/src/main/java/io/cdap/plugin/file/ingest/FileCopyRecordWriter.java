@@ -73,6 +73,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
    */
   public FileCopyRecordWriter(Configuration conf) throws IOException {
 
+        LOG.info("Initializating of RecordWriter");
 
     if (conf.get(FileCopyOutputFormat.NAME_FILECOMPRESSION).equals("NONE")){
         compression=false;
@@ -103,6 +104,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
 
         try {
             encKey = PGPUtil.readPublicKey(publicKeyPath);
+            LOG.info("Retreived PublicKey");
         }catch (PGPException ex) {
             LOG.error(ex.getMessage());
             throw new IOException(ex.getMessage());
@@ -112,7 +114,9 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
     // Create GCS Storage using the credentials
 
       storage = getGoogleStorage(gcsserviceaccountjson,project);
+      LOG.info("Created GCS Storage");
       bucket = getBucket(storage,bucketname);
+      LOG.info("Created GCS Bucket");
 
   }
 

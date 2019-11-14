@@ -39,12 +39,14 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     @Override
     public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
         super.configurePipeline(pipelineConfigurer);
+        LOG.info("Completed configurePipeline");
     }
 
     // prepareRun is called before every pipeline run, and is used to configure what the input should be,
     // as well as any arguments the input should use. It is called by the client that is submitting the batch job.
     @Override
     public void prepareRun(BatchSinkContext context) throws Exception {
+        LOG.info("Completed prepareRun");
     }
 
     // onRunFinish is called at the end of the pipeline run by the client that submitted the batch job.
@@ -59,6 +61,7 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     @Override
     public void initialize(BatchRuntimeContext context) throws Exception {
         super.initialize(context);
+        LOG.info("Completed Initialization");
     }
 
     // destroy is called by each job executor at the end of its life.
@@ -70,9 +73,11 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
 
     @Override
     public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileMetadata>> emitter) throws Exception {
+        LOG.info("Inside Transform");
         FileMetadata output;
         output = new FileMetadata(input);
         emitter.emit(new KeyValue<NullWritable, FileMetadata>(null, output));
+        LOG.info("Exiting Transform");
     }
 
 
