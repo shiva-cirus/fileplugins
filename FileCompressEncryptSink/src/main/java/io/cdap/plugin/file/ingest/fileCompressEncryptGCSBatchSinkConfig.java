@@ -43,7 +43,7 @@ public abstract class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig
   }
 
   public static final String NAME_COMPRESSION = "compression";
-  public static final String NAME_ENCRYPTION = "compression";
+  public static final String NAME_ENCRYPTION = "encryption";
   public static final String NAME_PATH = "path";
   public static final String NAME_SUFFIX = "suffix";
   public static final String NAME_PROJECT = "project";
