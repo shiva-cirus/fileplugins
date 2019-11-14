@@ -1,65 +1,91 @@
 {
   "metadata": {
-    "spec-version": "1.5"
+    "spec-version": "1.0"
   },
-  "display-name": "Whole File Copier",
   "configuration-groups": [
     {
-      "label": "File Copy Configuration",
+      "label": "Compression",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Compression Algorithm",
+          "name": "compression",
+          "widget-attributes": {
+            "values": [
+              "ZIP",
+              "NONE"
+            ],
+            "default": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Google Cloud Stogare Parameters",
       "properties": [
         {
           "widget-type": "textbox",
-          "label": "Reference Name",
-          "name": "referenceName"
-        },
-        {
-          "widget-type": "select",
-          "label": "Scheme",
-          "name": "scheme",
+          "label": "Project ID",
+          "name": "project",
           "widget-attributes": {
-            "values": [
-              "hdfs",
-              "file"
-            ],
-            "default": "file"
+            "default": "auto-detect"
           }
         },
         {
           "widget-type": "textbox",
-          "label": "Base Path",
-          "name": "basePath"
-        },
-        {
-          "widget-type": "select",
-          "label": "Enable Overwrite",
-          "name": "enableOverwrite",
+          "label": "Path",
+          "name": "path",
           "widget-attributes": {
-            "values": [
-              "true",
-              "false"
-            ],
-            "default": "false"
-          }
-        },
-        {
-          "widget-type": "select",
-          "label": "Preserve File Owner",
-          "name": "preserveFileOwner",
-          "widget-attributes": {
-            "values": [
-              "true",
-              "false"
-            ],
-            "default": "false"
+            "placeholder": "gs://<bucket>/path/to/output"
           }
         },
         {
           "widget-type": "textbox",
-          "label": "Buffer Size (MB)",
-          "name": "bufferSize",
-          "default": "1"
+          "label": "Path Suffix",
+          "name": "suffix",
+          "widget-attributes": {
+            "default": "yyyy-MM-dd-HH-mm"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Google Cloud Storage Credentials",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Service Account File Path",
+          "name": "serviceFilePath",
+          "widget-attributes": {
+            "default": "auto-detect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Encryption",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Encryption Algorithm",
+          "name": "encryption",
+          "widget-attributes": {
+            "values": [
+              "PGP",
+              "NONE"
+            ],
+            "default": "NONE"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Public Key Path",
+          "name": "publicKeyPath"
+
         }
       ]
     }
-  ]
+
+  ],
+  "outputs": []
 }
