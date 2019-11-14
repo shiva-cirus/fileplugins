@@ -16,6 +16,11 @@
 
 package io.cdap.plugin.file.ingest;
 
+import com.google.cloud.WriteChannel;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Bucket;
+import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.plugin.file.ingest.s3.S3FileMetadata;
 import io.cdap.plugin.file.ingest.s3.S3MetadataInputFormat;
 import org.apache.hadoop.conf.Configuration;
@@ -27,13 +32,18 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -143,6 +153,82 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
         }
       }
     }
+
+
+
+
+    LOG.info("Schema and filds are: " + config.compressor);
+    String fieldName = null;
+    if (config.compressor != null) {
+      String[] split = config.compressor.split(":");
+      fieldName = split[0];
+    }
+
+    System.out.println("fieldName >>>>>>>>>" + fieldName);
+
+    PGPPublicKey encKey = null;
+
+    encKey = PGPExampleUtil.readPublicKey(config.publicKeyPath);
+
+    storage = getGoogleStorage();
+    Bucket bucket = getBucket();
+
+    String finalFieldName = fieldName;
+    PGPPublicKey finalEncKey = encKey;
+
+    List<StructuredRecord> collect = javaRDD.collect();
+
+    collect.forEach(st -> {
+
+      String fileName = st.get(finalFieldName);
+      String outFileName = null;
+      File file = new File(fileName);
+      if (file != null) {
+        outFileName = file.getName() + ".enc";
+      }
+
+      LOG.info("file Name >>> " + fileName);
+
+      BlobId blobId = BlobId.of(bucket.getName(), outFileName);
+
+      BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
+
+
+      InputStream inputStream = null;
+
+      try {
+        inputStream = FileCompressEncrypt.gcsWriter(fileName, finalEncKey);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
+      byte[] buffer = new byte[1 << 16];
+      try {
+        try (WriteChannel writer =
+                     storage.writer(blobInfo)) {
+          int limit;
+          while ((limit = inputStream.read(buffer)) >= 0) {
+            System.out.println("upload file " + limit);
+            writer.write(ByteBuffer.wrap(buffer, 0, limit));
+          }
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      try {
+        inputStream.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
+
+    });
+
+
+
+
+
+
   }
 
   @Override
