@@ -1,0 +1,105 @@
+{
+    "artifact": {
+        "name": "cdap-data-streams",
+        "version": "6.0.0",
+        "scope": "SYSTEM",
+        "label": "Data Pipeline - Realtime"
+    },
+    "description": "Usecase #3 -  Real Time streaming Usecase to persist data into Google BigQuery.",
+    "name": "CDAPPOV-UC3",
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "Kafka Consumer",
+                "to": "BigQuery"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {
+            "system.spark.spark.streaming.backpressure.enabled": "true",
+            "system.spark.spark.executor.instances": "1"
+        },
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "name": "Kafka Consumer",
+                "plugin": {
+                    "name": "Kafka",
+                    "type": "streamingsource",
+                    "label": "Kafka Consumer",
+                    "artifact": {
+                        "name": "kafka-plugins",
+                        "version": "2.1.0-0.10.2.0",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"_id\",\"type\":\"string\"},{\"name\":\"guid\",\"type\":\"string\"},{\"name\":\"age\",\"type\":\"int\"},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"balance\",\"type\":\"string\"},{\"name\":\"picture\",\"type\":\"string\"},{\"name\":\"index\",\"type\":\"int\"},{\"name\":\"first\",\"type\":\"string\"},{\"name\":\"last\",\"type\":\"string\"},{\"name\":\"company\",\"type\":\"string\"}]}",
+                        "maxRatePerPartition": "1000",
+                        "format": "csv",
+                        "brokers": "localhost:9092",
+                        "referenceName": "KFCONSUMER",
+                        "topic": "cdaptest"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"_id\",\"type\":\"string\"},{\"name\":\"guid\",\"type\":\"string\"},{\"name\":\"age\",\"type\":\"int\"},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"balance\",\"type\":\"string\"},{\"name\":\"picture\",\"type\":\"string\"},{\"name\":\"index\",\"type\":\"int\"},{\"name\":\"first\",\"type\":\"string\"},{\"name\":\"last\",\"type\":\"string\"},{\"name\":\"company\",\"type\":\"string\"}]}"
+                    }
+                ]
+            },
+            {
+                "name": "BigQuery",
+                "plugin": {
+                    "name": "BigQueryTable",
+                    "type": "batchsink",
+                    "label": "BigQuery",
+                    "artifact": {
+                        "name": "google-cloud",
+                        "version": "0.12.2",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "project": "midyear-courage-256620",
+                        "allowSchemaRelaxation": "false",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"_id\",\"type\":\"string\"},{\"name\":\"guid\",\"type\":\"string\"},{\"name\":\"age\",\"type\":\"int\"},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"balance\",\"type\":\"string\"},{\"name\":\"picture\",\"type\":\"string\"},{\"name\":\"index\",\"type\":\"int\"},{\"name\":\"first\",\"type\":\"string\"},{\"name\":\"last\",\"type\":\"string\"},{\"name\":\"company\",\"type\":\"string\"}]}",
+                        "referenceName": "BQ1",
+                        "dataset": "CDAPPOV",
+                        "table": "customer"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"_id\",\"type\":\"string\"},{\"name\":\"guid\",\"type\":\"string\"},{\"name\":\"age\",\"type\":\"int\"},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"balance\",\"type\":\"string\"},{\"name\":\"picture\",\"type\":\"string\"},{\"name\":\"index\",\"type\":\"int\"},{\"name\":\"first\",\"type\":\"string\"},{\"name\":\"last\",\"type\":\"string\"},{\"name\":\"company\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "Kafka Consumer",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"_id\",\"type\":\"string\"},{\"name\":\"guid\",\"type\":\"string\"},{\"name\":\"age\",\"type\":\"int\"},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"balance\",\"type\":\"string\"},{\"name\":\"picture\",\"type\":\"string\"},{\"name\":\"index\",\"type\":\"int\"},{\"name\":\"first\",\"type\":\"string\"},{\"name\":\"last\",\"type\":\"string\"},{\"name\":\"company\",\"type\":\"string\"}]}"
+                    }
+                ]
+            }
+        ],
+        "batchInterval": "10s",
+        "clientResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "disableCheckpoints": false,
+        "checkpointDir": "",
+        "stopGracefully": true,
+        "description": "Usecase #3 -  Real Time streaming Usecase to persist data into Google BigQuery."
+    }
+}

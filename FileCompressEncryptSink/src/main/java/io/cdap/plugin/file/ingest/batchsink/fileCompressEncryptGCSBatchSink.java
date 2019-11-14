@@ -13,6 +13,7 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
+import io.cdap.plugin.file.ingest.sparksink.FileListData;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,7 @@ import java.util.Map;
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(fileCompressEncryptGCSBatchSink.NAME)
 @Description("File Compress / Encrypt and Persist to GCS.")
-public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord, NullWritable, FileMetadata> {
+public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord, NullWritable, FileListData> {
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSink.class);
     public static final String NAME = "fileCompressEncryptGCSBatchSink";
@@ -73,11 +74,11 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     }
 
     @Override
-    public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileMetadata>> emitter) throws Exception {
+    public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileListData>> emitter) throws Exception {
         LOG.info("Inside Transform");
-        FileMetadata output;
-        output = new FileMetadata(input);
-        emitter.emit(new KeyValue<NullWritable, FileMetadata>(null, output));
+        FileListData output;
+        output = new FileListData(input);
+        emitter.emit(new KeyValue<NullWritable, FileListData>(null, output));
         LOG.info("Exiting Transform");
     }
 
@@ -93,9 +94,9 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
             FileCopyOutputFormat.setCompression(conf,config.compression);
             FileCopyOutputFormat.setEncryption(conf,config.encryption);
             FileCopyOutputFormat.setGCSBucket(conf,config.getBucket());
-            FileCopyOutputFormat.setGCSDestPath(conf,config.path);
+            FileCopyOutputFormat.setGCSDestPath(conf,config.getDestPath());
             FileCopyOutputFormat.setGCSDestPathSuffix(conf,config.suffix);
-            FileCopyOutputFormat.setPGPPubKey(conf,config.publicKeyPath);
+            FileCopyOutputFormat.setPGPPubKey(conf,config.getPublicKeyPath());
             FileCopyOutputFormat.setGCSProjectID(conf,config.getProject());
             FileCopyOutputFormat.setGCSServiceAccount(conf,config.getServiceAccountFilePath());
 

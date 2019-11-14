@@ -20,8 +20,10 @@ import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
-import io.cdap.plugin.file.ingest.batchsink.encryption.FileCompressEncrypt;
-import io.cdap.plugin.file.ingest.batchsink.encryption.PGPUtil;
+import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
+import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
+import io.cdap.plugin.file.ingest.sparksink.FileListData;
+import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.NullWritable;
@@ -31,7 +33,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.cdap.plugin.file.ingest.batchsink.encryption.*;
+
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,7 +45,7 @@ import java.util.Iterator;
  * The record writer that takes file metadata and streams data from source database
  * to destination database
  */
-public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadata> {
+public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListData> {
     private final boolean compression;
     private final boolean encryption;
     private final String bucketname;
@@ -57,6 +59,13 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
     private PGPPublicKey encKey = null;
     private Storage storage = null;
     private Bucket bucket = null;
+
+    static Configuration conf = null;
+    static {
+        conf = new Configuration();
+        conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
+        conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+    }
 
   /**
    * Construct a RecordWriter given user configurations.
@@ -96,7 +105,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
         //Read the Public Key to Encrypt Data
 
         try {
-            encKey = PGPUtil.readPublicKey(publicKeyPath);
+            encKey = PGPCertUtil.readPublicKey(publicKeyPath);
             LOG.info("Retreived PublicKey");
         }catch (PGPException ex) {
             LOG.error(ex.getMessage());
@@ -153,34 +162,52 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
    * destination filesystem.
    *
    * @param key Unused key.
-   * @param fileMetadata Contains metadata for the file we wish to copy.
+   * @param fileListData Contains metadata for the file we wish to copy.
    * @throws IOException
    * @throws InterruptedException
    */
   @Override
-  public void write(NullWritable key, FileMetadata fileMetadata) throws IOException, InterruptedException {
+  public void write(NullWritable key, FileListData fileListData) throws IOException, InterruptedException {
 
-    if (fileMetadata.getRelativePath().isEmpty()) {
+    if (fileListData.getRelativePath().isEmpty()) {
       return;
     }
 
     // construct file paths for source and destination
     //Path srcPath = new Path(fileMetadata.getFullPath());
 
-    String outFileName = destpath + fileMetadata.getRelativePath();
+    String outFileName = destpath + fileListData.getRelativePath();
+      String contentType = "application/octet-stream";
+      if (encryption) {
+          outFileName += ".pgp";
+          contentType = "application/pgp-encrypted";
+      }
 
-    if ( encryption) outFileName+=".pgp";
+      FileMetaData fileMetaData = null;
+      String fileName = fileListData.getFullPath();
+      if (fileName != null) {
+          try {
+              fileMetaData = getFileMetaData(fileName, "");
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
+
+      }
+
+
+
+
     LOG.info("Output File Name " + outFileName);
 
       BlobId blobId = BlobId.of(bucket.getName(), outFileName);
 
-      BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
+      BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
 
 
       InputStream inputStream = null;
 
       try {
-        inputStream = FileCompressEncrypt.gcsWriter(fileMetadata.getFullPath(),encKey );
+          inputStream = FileCompressEncrypt.gcsWriter(fileMetaData,compression ,encryption , encKey);
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -205,6 +232,11 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileMetadat
       }
 
 
+    }
+
+
+    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
+        return new FileMetaData(filePath, conf);
     }
 
   @Override

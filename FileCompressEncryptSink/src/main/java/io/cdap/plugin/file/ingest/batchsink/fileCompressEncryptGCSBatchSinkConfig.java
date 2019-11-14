@@ -7,7 +7,7 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 
 import io.cdap.cdap.api.plugin.PluginConfig;
-import io.cdap.plugin.file.ingest.batchsink.utils.GCSPath;
+import io.cdap.plugin.file.ingest.utils.GCSPath;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -100,7 +100,12 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Nullable
     protected String publicKeyPath;
 
-    public String getBucket() {
+  public String getDestPath(){
+    return GCSPath.from(path).getName();
+  }
+
+
+  public String getBucket() {
       return GCSPath.from(path).getBucket();
     }
 
@@ -175,4 +180,20 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
       }
       return false;
     }
+  public String getCompressor() {
+    return compression;
+  }
+
+  public String getEncryption() {
+    return encryption;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  @Nullable
+  public String getPublicKeyPath() {
+    return publicKeyPath;
+  }
 }
