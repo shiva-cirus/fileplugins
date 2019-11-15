@@ -12,10 +12,9 @@
           "name": "compression",
           "widget-attributes": {
             "values": [
-              "ZIP",
-              "NONE"
+              "ZIP"
             ],
-            "default": "NONE"
+            "default": "ZIP"
           }
         }
       ]
