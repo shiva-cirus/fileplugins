@@ -129,8 +129,8 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         LOG.info("Created GCS Bucket");
     }
 
-    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return new FileMetaData(uri + '/' + filePath, conf);
+    private static FileMetaData getFileMetaData(String filePath, String fileName, String uri) throws IOException {
+        return new FileMetaData(uri + '/' + filePath, fileName, conf);
     }
 
     private Storage getGoogleStorage(String serviceAccountJSON, String project) {
@@ -191,10 +191,10 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
 
         FileMetaData fileMetaData = null;
-        String fileName = fileListData.getFullPath();
-        if (fileName != null) {
+        String fullPath = fileListData.getFullPath();
+        if (fullPath != null) {
             try {
-                fileMetaData = getFileMetaData(fileName, fileListData.getHostURI());
+                fileMetaData = getFileMetaData(fullPath, fileListData.getFileName(), fileListData.getHostURI());
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
             }

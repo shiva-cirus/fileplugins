@@ -70,7 +70,7 @@ public class FileCopyOutputFormat extends OutputFormat {
     }
 
     public static void setPGPPubKey(Map<String, String> conf, String value) {
-        conf.put(NAME_PGP_PUBKEY, value);
+        conf.put(NAME_PGP_PUBKEY, value == null ? "" : value);
     }
 
     @Override

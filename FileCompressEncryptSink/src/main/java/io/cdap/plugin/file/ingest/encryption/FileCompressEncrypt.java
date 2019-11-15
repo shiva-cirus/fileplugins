@@ -8,7 +8,6 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -28,6 +27,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -180,7 +180,27 @@ public class FileCompressEncrypt {
     private static void compressOnly(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
         ZipOutputStream zipOutputStream = new ZipOutputStream(out);
-        IOUtils.copy(inputStream, zipOutputStream);
+        //IOUtils.copy(inputStream, zipOutputStream);
+
+        /*
+        byte[] buffer = new byte[1<<16];
+
+        int size;
+        while ((size = inputStream.read(buffer)) > 0) {
+            zipOutputStream.write(buffer, 0, size);
+        }
+        */
+
+        byte[] buffer = new byte[1 << 16];
+        zipOutputStream.putNextEntry(new ZipEntry(fileMetaData.getFileName()));
+        int length;
+        while ((length = inputStream.read()) >= 0) {
+            zipOutputStream.write(buffer, 0, length);
+        }
+        zipOutputStream.closeEntry();
+        zipOutputStream.close();
+
+        inputStream.close();
     }
 
     private static void encryptOnly(OutputStream out, FileMetaData fileMetaData, PGPPublicKey encKey, boolean armor, boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
@@ -213,7 +233,16 @@ public class FileCompressEncrypt {
 
     private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
-        IOUtils.copy(inputStream, out);
+        //IOUtils.copy(inputStream, out);
+
+        byte[] buffer = new byte[1 << 16];
+
+        int size;
+        while ((size = inputStream.read(buffer)) > 0) {
+            out.write(buffer, 0, size);
+        }
+
+        inputStream.close();
     }
 
     private static void compressAndEncryptFile(
@@ -279,8 +308,8 @@ public class FileCompressEncrypt {
         var3.close();
     }
 
-    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return new FileMetaData(filePath, conf);
+    private static FileMetaData getFileMetaData(String filePath, String fileName, String uri) throws IOException {
+        return new FileMetaData(filePath, fileName, conf);
     }
 
     public static InputStream gcsWriter(FileMetaData fileMetaData, boolean compressFile, boolean encryptFile, PGPPublicKey encKey) throws IOException {
@@ -311,14 +340,14 @@ public class FileCompressEncrypt {
         return inPipe;
     }
 
-    public static void encryptionCompressAndUploadGCSWithThread(String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
+    public static void encryptionCompressAndUploadGCSWithThread(String inFilePath, String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
 
 
         PGPPublicKey encKey = PGPCertUtil.readPublicKey("PGP1D0.pkr");
 
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
-        FileMetaData fileMetaData = new FileMetaData(inFileName, conf);
+        FileMetaData fileMetaData = new FileMetaData(inFilePath, inFileName, conf);
         InputStream inputStream = gcsWriter(fileMetaData, true, true, encKey);
         /*try {
             Thread.sleep(2000);
@@ -360,11 +389,12 @@ public class FileCompressEncrypt {
 
         //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
 
-        String inFileName = "input/pkg1_vikas.csv";
+        String inFilePath = "input/pkg1_vikas.csv";
+        String inFileName = "pkg1_vikas.csv";
         String bucketName = "cdap_vikas";
         String uploadFileName = "pkg1_vikas.csv.asc";
 
-        encryptionCompressAndUploadGCSWithThread(inFileName, bucketName, uploadFileName);
+        encryptionCompressAndUploadGCSWithThread(inFilePath, inFileName, bucketName, uploadFileName);
 
 
         decryption("/Users/vikaskumar/Downloads/pkg1_vikas.csv.asc");

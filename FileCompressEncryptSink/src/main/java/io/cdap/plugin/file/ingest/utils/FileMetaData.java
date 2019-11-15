@@ -10,23 +10,26 @@ import java.io.IOException;
  * @author Vikas K  Created On 14/11/19
  **/
 public class FileMetaData {
-
     Path path;
     FileSystem fileSystem;
+    String fileName;
 
     private FileMetaData() {
     }
 
-    public FileMetaData(String filePath, Configuration conf) {
-
+    public FileMetaData(String filePath, String fileName, Configuration conf) {
+        this.fileName = fileName;
         this.path = new Path(filePath);
-
 
         try {
             this.fileSystem = path.getFileSystem(conf);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 
     public Path getPath() {
