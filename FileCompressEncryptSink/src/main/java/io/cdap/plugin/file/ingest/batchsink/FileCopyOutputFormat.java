@@ -17,11 +17,7 @@
 package io.cdap.plugin.file.ingest.batchsink;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.OutputCommitter;
-import org.apache.hadoop.mapreduce.OutputFormat;
-import org.apache.hadoop.mapreduce.RecordWriter;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +28,6 @@ import java.util.Map;
  * Class for the OutputFormat that FileCopySink uses.
  */
 public class FileCopyOutputFormat extends OutputFormat {
-
     public static final String NAME_FILECOMPRESSION = "file.compression";
     public static final String NAME_FILEENCRYPTION = "file.encryption";
     public static final String NAME_GCS_PROJECTID = "gcs.projectid";
@@ -42,50 +37,39 @@ public class FileCopyOutputFormat extends OutputFormat {
     public static final String NAME_GCS_DESTPATH_SUFFIX = "gcs.bucket.path.suffix";
     public static final String NAME_PGP_PUBKEY = "file.pgp.pub.key";
 
-
-
     public static final String FS_SCHEME = "filesystem.scheme";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileCopyOutputFormat.class);
 
-
-
-
-    public static void setCompression(Map<String, String> conf,  String value) {
+    public static void setCompression(Map<String, String> conf, String value) {
         conf.put(NAME_FILECOMPRESSION, value);
     }
 
-
-    public static void setEncryption(Map<String, String> conf,  String value) {
+    public static void setEncryption(Map<String, String> conf, String value) {
         conf.put(NAME_FILEENCRYPTION, value);
     }
 
-    public static void setGCSProjectID(Map<String, String> conf,  String value) {
+    public static void setGCSProjectID(Map<String, String> conf, String value) {
         conf.put(NAME_GCS_PROJECTID, value);
     }
 
-
-    public static void setGCSServiceAccount(Map<String, String> conf,  String value) {
+    public static void setGCSServiceAccount(Map<String, String> conf, String value) {
         conf.put(NAME_GCS_SERVICEACCOUNTJSON, value);
     }
 
-
-
-    public static void setGCSBucket(Map<String, String> conf,  String value) {
+    public static void setGCSBucket(Map<String, String> conf, String value) {
         conf.put(NAME_GCS_BUCKET, value);
     }
 
-    public static void setGCSDestPath(Map<String, String> conf,  String value) {
+    public static void setGCSDestPath(Map<String, String> conf, String value) {
         conf.put(NAME_GCS_DESTPATH, value);
     }
 
-
-
-    public static void setGCSDestPathSuffix(Map<String, String> conf,  String value) {
+    public static void setGCSDestPathSuffix(Map<String, String> conf, String value) {
         conf.put(NAME_GCS_DESTPATH_SUFFIX, value);
     }
 
-    public static void setPGPPubKey(Map<String, String> conf,  String value) {
+    public static void setPGPPubKey(Map<String, String> conf, String value) {
         conf.put(NAME_PGP_PUBKEY, value);
     }
 
@@ -96,8 +80,6 @@ public class FileCopyOutputFormat extends OutputFormat {
         //   throw new IOException("Base path not set.");
         //  }
     }
-
-
 
     @Override
     public OutputCommitter getOutputCommitter(TaskAttemptContext taskAttemptContext) {
@@ -130,8 +112,6 @@ public class FileCopyOutputFormat extends OutputFormat {
         };
 
     }
-
-
 
     @Override
     public RecordWriter getRecordWriter(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {

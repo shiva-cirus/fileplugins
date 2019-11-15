@@ -8,6 +8,7 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -27,6 +28,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author Vikas K  Created On 09/11/19
@@ -167,30 +169,18 @@ public class FileCompressEncrypt {
         if (compressFile && encryptFile) {
             compressAndEncryptFile(out, fileMetaData, encKey, armor, withIntegrityCheck);
         } else if (compressFile) {
-            compressOnly(out, fileMetaData, armor);
+            compressOnly(out, fileMetaData);
         } else if (encryptFile) {
             encryptOnly(out, fileMetaData, encKey, armor, withIntegrityCheck);
         } else {
-            noCompressNoEncrypt(out, fileMetaData, armor);
+            noCompressNoEncrypt(out, fileMetaData);
         }
     }
 
-    private static void compressOnly(OutputStream out, FileMetaData fileMetaData, boolean armor) throws IOException, NoSuchProviderException {
-        if (armor) {
-            out = new ArmoredOutputStream(out);
-        }
-
-        PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-
-        //PGPUtil.writeFileToLiteralData(comData.open(out), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
-        writeFileToLiteralData(comData.open(out), PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
-
-        comData.close();
-
-        if (armor) {
-            out.close();
-        }
-
+    private static void compressOnly(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
+        InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
+        ZipOutputStream zipOutputStream = new ZipOutputStream(out);
+        IOUtils.copy(inputStream, zipOutputStream);
     }
 
     private static void encryptOnly(OutputStream out, FileMetaData fileMetaData, PGPPublicKey encKey, boolean armor, boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
@@ -221,17 +211,9 @@ public class FileCompressEncrypt {
         }
     }
 
-    private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData, boolean armor) throws IOException, NoSuchProviderException {
-        if (armor) {
-            out = new ArmoredOutputStream(out);
-        }
-
-        //PGPUtil.writeFileToLiteralData(out, PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
-        writeFileToLiteralData(out, PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
-
-        if (armor) {
-            out.close();
-        }
+    private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
+        InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
+        IOUtils.copy(inputStream, out);
     }
 
     private static void compressAndEncryptFile(

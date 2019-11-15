@@ -20,9 +20,9 @@ import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
+import io.cdap.plugin.file.ingest.common.FileListData;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
-import io.cdap.plugin.file.ingest.common.FileListData;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -33,7 +33,6 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,19 +45,7 @@ import java.util.Iterator;
  * to destination database
  */
 public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListData> {
-    private final boolean compression;
-    private final boolean encryption;
-    private final String bucketname;
-    private final String publicKeyPath;
-    private final String project;
-    private final String destpath;
-    private final String suffix;
-    private final String gcsserviceaccountjson;
-
     private static final Logger LOG = LoggerFactory.getLogger(FileCopyRecordWriter.class);
-    private PGPPublicKey encKey = null;
-    private Storage storage = null;
-    private Bucket bucket = null;
 
     static Configuration conf = null;
 
@@ -67,6 +54,18 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
         conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
     }
+
+    private final boolean compression;
+    private final boolean encryption;
+    private final String bucketname;
+    private final String publicKeyPath;
+    private final String project;
+    private final String destpath;
+    private final String suffix;
+    private final String gcsserviceaccountjson;
+    private PGPPublicKey encKey = null;
+    private Storage storage = null;
+    private Bucket bucket = null;
 
     /**
      * Construct a RecordWriter given user configurations.
@@ -114,7 +113,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
 
         if (encryption) {
             //Read the Public Key to Encrypt Data
-
             try {
                 encKey = PGPCertUtil.readPublicKey(publicKeyPath);
                 LOG.info("Retreived PublicKey");
@@ -125,14 +123,15 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
 
         // Create GCS Storage using the credentials
-
         storage = getGoogleStorage(gcsserviceaccountjson, project);
         LOG.info("Created GCS Storage");
         bucket = getBucket(storage, bucketname);
         LOG.info("Created GCS Bucket");
-
     }
 
+    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
+        return new FileMetaData(uri + '/' + filePath, conf);
+    }
 
     private Storage getGoogleStorage(String serviceAccountJSON, String project) {
         Credentials credentials = null;
@@ -149,11 +148,9 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
                 .getService();
 
         return storage;
-
     }
 
     private Bucket getBucket(Storage storage, String bucketname) {
-
         Bucket bucket = storage.get(bucketname);
         if (bucket == null) {
             LOG.info("Creating new bucket.");
@@ -161,7 +158,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
         return bucket;
     }
-
 
     /**
      * This method connects to the source filesystem and copies the file specified by the FileMetadata input to the
@@ -189,7 +185,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
             contentType = "application/zip";
         }
 
-
         if (encryption) {
             outFileName += ".pgp";
             contentType = "application/pgp-encrypted";
@@ -203,16 +198,13 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
             }
-
         }
-
 
         LOG.info("Output File Name " + outFileName);
 
         BlobId blobId = BlobId.of(bucket.getName(), outFileName);
 
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
-
 
         InputStream inputStream = null;
 
@@ -235,13 +227,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         } catch (IOException e) {
             LOG.error(e.getMessage(), e);
         }
-
-
-    }
-
-
-    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return new FileMetaData(uri+'/'+filePath, conf);
     }
 
     @Override
@@ -269,6 +254,4 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
             }
         }
     }
-
-
 }

@@ -1,6 +1,5 @@
 package io.cdap.plugin.file.ingest.batchsink;
 
-
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
@@ -23,14 +22,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(fileCompressEncryptGCSBatchSink.NAME)
 @Description("File Compress / Encrypt and Persist to GCS.")
 public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord, NullWritable, FileListData> {
+    public static final String NAME = "fileCompressEncryptGCSBatchSink";
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSink.class);
-    public static final String NAME = "fileCompressEncryptGCSBatchSink";
+
     private final fileCompressEncryptGCSBatchSinkConfig config;
 
     public fileCompressEncryptGCSBatchSink(fileCompressEncryptGCSBatchSinkConfig config) {
@@ -45,10 +44,10 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
         if (config.encryptFile() && StringUtils.isEmpty(config.getPublicKeyPath())) {
             throw new IllegalArgumentException(String.format("Encryption enabled and PGP Public Key path is missing for %s plugin. Please provide the same.", NAME));
         }
-        if (StringUtils.isNotEmpty(config.getSuffix())){
+        if (StringUtils.isNotEmpty(config.getSuffix())) {
             try {
                 DateTimeFormatter.ofPattern(config.getSuffix());
-            }catch (Exception e){
+            } catch (Exception e) {
                 throw new IllegalArgumentException(String.format("Suffix has a invalid date format for %s plugin. Please correct the same.", NAME));
             }
         }
@@ -94,7 +93,6 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
         LOG.info("Exiting Transform");
     }
 
-
     /**
      * Adds necessary configuration resources and provides OutputFormat Class
      */
@@ -103,14 +101,14 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
 
         public FileCopyOutputFormatProvider(fileCompressEncryptGCSBatchSinkConfig config) {
             this.conf = new HashMap<>();
-            FileCopyOutputFormat.setCompression(conf,config.compression);
-            FileCopyOutputFormat.setEncryption(conf,config.encryption);
-            FileCopyOutputFormat.setGCSBucket(conf,config.getBucket());
-            FileCopyOutputFormat.setGCSDestPath(conf,config.getDestPath());
-            FileCopyOutputFormat.setGCSDestPathSuffix(conf,config.suffix);
-            FileCopyOutputFormat.setPGPPubKey(conf,config.getPublicKeyPath());
-            FileCopyOutputFormat.setGCSProjectID(conf,config.getProject());
-            FileCopyOutputFormat.setGCSServiceAccount(conf,config.getServiceAccountFilePath());
+            FileCopyOutputFormat.setCompression(conf, config.compression);
+            FileCopyOutputFormat.setEncryption(conf, config.encryption);
+            FileCopyOutputFormat.setGCSBucket(conf, config.getBucket());
+            FileCopyOutputFormat.setGCSDestPath(conf, config.getDestPath());
+            FileCopyOutputFormat.setGCSDestPathSuffix(conf, config.suffix);
+            FileCopyOutputFormat.setPGPPubKey(conf, config.getPublicKeyPath());
+            FileCopyOutputFormat.setGCSProjectID(conf, config.getProject());
+            FileCopyOutputFormat.setGCSServiceAccount(conf, config.getServiceAccountFilePath());
         }
 
         @Override
@@ -124,4 +122,3 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
         }
     }
 }
-

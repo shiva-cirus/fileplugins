@@ -16,7 +16,6 @@
 
 package io.cdap.plugin.file.ingest.utils;
 
-
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -38,44 +37,6 @@ public class GCSPath {
         this.uri = uri;
         this.bucket = bucket;
         this.name = name;
-    }
-
-    public URI getUri() {
-        return uri;
-    }
-
-    public String getBucket() {
-        return bucket;
-    }
-
-    /**
-     * @return the object name. This will be an empty string if the path represents a bucket.
-     */
-    public String getName() {
-        return name;
-    }
-
-    boolean isBucket() {
-        return name.isEmpty();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        GCSPath gcsPath = (GCSPath) o;
-        return Objects.equals(uri, gcsPath.uri) &&
-                Objects.equals(bucket, gcsPath.bucket) &&
-                Objects.equals(name, gcsPath.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(uri, bucket, name);
     }
 
     /**
@@ -118,5 +79,43 @@ public class GCSPath {
             e.printStackTrace();
         }
         return new GCSPath(uri, bucket, file);
+    }
+
+    public URI getUri() {
+        return uri;
+    }
+
+    public String getBucket() {
+        return bucket;
+    }
+
+    /**
+     * @return the object name. This will be an empty string if the path represents a bucket.
+     */
+    public String getName() {
+        return name;
+    }
+
+    boolean isBucket() {
+        return name.isEmpty();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GCSPath gcsPath = (GCSPath) o;
+        return Objects.equals(uri, gcsPath.uri) &&
+                Objects.equals(bucket, gcsPath.bucket) &&
+                Objects.equals(name, gcsPath.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uri, bucket, name);
     }
 }

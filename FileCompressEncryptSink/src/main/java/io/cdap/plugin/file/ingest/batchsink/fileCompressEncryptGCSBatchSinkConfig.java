@@ -18,37 +18,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSinkConfig.class);
-
-    private enum CompressorType {
-        ZIP("ZIP"),
-        NONE("NONE");
-        private String type;
-
-        CompressorType(String type) {
-            this.type = type;
-        }
-
-        String getType() {
-            return type;
-        }
-    }
-
-
-    private enum EncryptionType {
-        PGP("PGP"),
-        NONE("NONE");
-        private String type;
-
-        EncryptionType(String type) {
-            this.type = type;
-        }
-
-        String getType() {
-            return type;
-        }
-    }
-
     public static final String NAME_COMPRESSION = "compression";
     public static final String NAME_ENCRYPTION = "encryption";
     public static final String NAME_PATH = "path";
@@ -57,7 +26,9 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
     public static final String AUTO_DETECT = "auto-detect";
     public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
+    public static final String SCHEME = "gs://";
 
+    private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSinkConfig.class);
 
     @Name(NAME_COMPRESSION)
     @Description("Specify the compression algorithm. If None is selected then data is not compressed.")
@@ -66,9 +37,6 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Name(NAME_ENCRYPTION)
     @Description("Specify the encryption algorithm. If None is selected then data is not encrypted.")
     protected String encryption = EncryptionType.PGP.getType();
-
-
-    protected static final String SCHEME = "gs://";
 
     @Name(NAME_PATH)
     @Description("The path to write to. For example, gs://<bucket>")
@@ -82,7 +50,6 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Nullable
     @Macro
     protected String suffix;
-
 
     @Name(NAME_PROJECT)
     @Description("Google Cloud Project ID, which uniquely identifies a project. "
@@ -99,12 +66,21 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Nullable
     protected String serviceFilePath;
 
-
     @Name(NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH)
     @Description("Path on the local file system of the public key used for encryption.")
     @Macro
     @Nullable
     protected String publicKeyPath;
+
+    public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath) {
+        this.compression = compression;
+        this.encryption = encryption;
+        this.path = path;
+        this.suffix = suffix;
+        this.project = project;
+        this.serviceFilePath = serviceFilePath;
+        this.publicKeyPath = publicKeyPath;
+    }
 
     public String getDestPath() {
         String destinationPath = GCSPath.from(path).getName();
@@ -124,19 +100,8 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
         return destinationPath;
     }
 
-
     public String getBucket() {
         return GCSPath.from(path).getBucket();
-    }
-
-    public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath) {
-        this.compression = compression;
-        this.encryption = encryption;
-        this.path = path;
-        this.suffix = suffix;
-        this.project = project;
-        this.serviceFilePath = serviceFilePath;
-        this.publicKeyPath = publicKeyPath;
     }
 
     public String getProject() {
@@ -155,9 +120,8 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
     }
 
-
     public boolean encryptFile() {
-        if (Strings.isNullOrEmpty(encryption) || compression.equals(EncryptionType.NONE.getType()))
+        if (Strings.isNullOrEmpty(encryption) || encryption.equals(EncryptionType.NONE.getType()))
             return false;
         return true;
     }
@@ -220,5 +184,33 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Nullable
     public String getPublicKeyPath() {
         return publicKeyPath;
+    }
+
+    private enum CompressorType {
+        ZIP("ZIP"),
+        NONE("NONE");
+        private String type;
+
+        CompressorType(String type) {
+            this.type = type;
+        }
+
+        String getType() {
+            return type;
+        }
+    }
+
+    private enum EncryptionType {
+        PGP("PGP"),
+        NONE("NONE");
+        private String type;
+
+        EncryptionType(String type) {
+            this.type = type;
+        }
+
+        String getType() {
+            return type;
+        }
     }
 }

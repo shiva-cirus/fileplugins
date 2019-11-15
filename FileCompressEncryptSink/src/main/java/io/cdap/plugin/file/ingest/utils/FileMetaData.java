@@ -9,7 +9,6 @@ import java.io.IOException;
 /**
  * @author Vikas K  Created On 14/11/19
  **/
-
 public class FileMetaData {
 
     Path path;
@@ -38,7 +37,7 @@ public class FileMetaData {
         return fileSystem;
     }
 
-    public long getLastModifiedTime()  {
+    public long getLastModifiedTime() {
         try {
             return fileSystem.getFileStatus(path).getModificationTime();
         } catch (IOException e) {

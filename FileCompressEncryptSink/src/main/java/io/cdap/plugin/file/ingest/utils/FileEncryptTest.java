@@ -22,18 +22,18 @@ import java.util.Iterator;
 
 //
 public class FileEncryptTest {
+    static final KeyFingerPrintCalculator FP_CALC = new BcKeyFingerprintCalculator();
     private static File publicKeyFile = new File("PGP1D0.pkr");
     private static File privateKeyFile = new File("PGP1D0.skr");
     private static String privateKeyPassword = "passphrase";
-
     private OutputStream outputStream;
+
+    // private static final boolean isEncrypt = false;
+
 
     public FileEncryptTest(OutputStream outPipe) {
         this.outputStream = outPipe;
     }
-
-    // private static final boolean isEncrypt = false;
-
 
     public static void main(String[] args) {
         Security.addProvider(new BouncyCastleProvider());
@@ -44,42 +44,6 @@ public class FileEncryptTest {
         FileEncryptTest test = new FileEncryptTest(new ByteArrayOutputStream());
         test.amanEncrypt(fileName, outFileName);
         amanDencrypt(outFileName, recoverFile);
-
-
-    }
-
-
-    private void amanEncrypt(String fileName, String outFileName) {
-        PGPPublicKey encKey = null;
-        OutputStream out = null;
-        InputStream keyIn = null;
-        InputStream outFileIn = null;
-        char[] passPhrase = privateKeyPassword.toCharArray();
-        boolean armor = false;
-        boolean withIntegrityCheck = true;
-
-        try {
-            keyIn = new BufferedInputStream(new FileInputStream(privateKeyFile));
-            //out = new BufferedOutputStream(new FileOutputStream(outFileName));
-            encKey = readPublicKeyFromCol(new FileInputStream(publicKeyFile));
-            signFile(fileName, keyIn, out, passPhrase, armor);
-
-            out = new BufferedOutputStream(outputStream);
-            encryptFile(outFileName, out, fileName, encKey, passPhrase, armor, withIntegrityCheck);
-        } catch (
-                Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-
-        } finally {
-            try {
-                keyIn.close();
-                out.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-        }
-
     }
 
     private static void amanDencrypt(String outFileName, String recoverFile) {
@@ -98,12 +62,7 @@ public class FileEncryptTest {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
-
     }
-
-
-    static final KeyFingerPrintCalculator FP_CALC = new BcKeyFingerprintCalculator();
 
     private static PGPPublicKey readPublicKeyFromCol(InputStream in) throws Exception {
         PGPPublicKeyRing pkRing = null;
@@ -158,7 +117,6 @@ public class FileEncryptTest {
         }
 
     }
-
 
     private static PGPPrivateKey findSecretKey(InputStream keyIn, long keyID, char[] pass)
             throws IOException, PGPException, NoSuchProviderException {
@@ -260,7 +218,6 @@ public class FileEncryptTest {
         try {
             PGPUtil.writeFileToLiteralData(comData.open(bOut), PGPLiteralData.BINARY, new File(fileName));
         } catch (IOException e) {
-
             e.printStackTrace();
         } finally {
             try {
@@ -374,5 +331,38 @@ public class FileEncryptTest {
 
         out.close();
         bOut.close();
+    }
+
+    private void amanEncrypt(String fileName, String outFileName) {
+        PGPPublicKey encKey = null;
+        OutputStream out = null;
+        InputStream keyIn = null;
+        InputStream outFileIn = null;
+        char[] passPhrase = privateKeyPassword.toCharArray();
+        boolean armor = false;
+        boolean withIntegrityCheck = true;
+
+        try {
+            keyIn = new BufferedInputStream(new FileInputStream(privateKeyFile));
+            //out = new BufferedOutputStream(new FileOutputStream(outFileName));
+            encKey = readPublicKeyFromCol(new FileInputStream(publicKeyFile));
+            signFile(fileName, keyIn, out, passPhrase, armor);
+
+            out = new BufferedOutputStream(outputStream);
+            encryptFile(outFileName, out, fileName, encKey, passPhrase, armor, withIntegrityCheck);
+        } catch (
+                Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+
+        } finally {
+            try {
+                keyIn.close();
+                out.close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        }
+
     }
 }

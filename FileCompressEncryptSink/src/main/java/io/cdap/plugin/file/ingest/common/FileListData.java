@@ -176,6 +176,7 @@ public class FileListData implements Comparable<FileListData> {
 
     /**
      * Override this in extended class to return credential schema for different filesystems.
+     *
      * @return Credential schema for different filesystems
      */
     protected Schema getCredentialSchema() {
@@ -184,6 +185,7 @@ public class FileListData implements Comparable<FileListData> {
 
     /**
      * Override this in extended class to add credential information to StructuredRecord.
+     *
      * @param builder
      */
     protected void addCredentialsToRecordBuilder(StructuredRecord.Builder builder) {
