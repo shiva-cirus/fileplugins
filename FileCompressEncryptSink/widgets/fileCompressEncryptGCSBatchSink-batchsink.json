@@ -12,7 +12,8 @@
           "name": "compression",
           "widget-attributes": {
             "values": [
-              "ZIP"
+              "ZIP",
+              "NONE"
             ],
             "default": "ZIP"
           }
@@ -70,10 +71,9 @@
           "name": "encryption",
           "widget-attributes": {
             "values": [
-              "PGP",
-              "NONE"
+              "PGP"
             ],
-            "default": "NONE"
+            "default": "PGP"
           }
         },
         {
