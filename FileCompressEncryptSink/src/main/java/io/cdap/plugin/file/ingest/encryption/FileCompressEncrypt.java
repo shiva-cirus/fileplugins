@@ -198,6 +198,7 @@ public class FileCompressEncrypt {
             zipOutputStream.write(buffer, 0, length);
         }
         zipOutputStream.closeEntry();
+        zipOutputStream.finish();
         zipOutputStream.close();
 
         inputStream.close();
