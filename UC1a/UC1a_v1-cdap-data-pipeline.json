@@ -1,0 +1,112 @@
+{
+    "name": "UC1a_v1",
+    "description": "Compress / Encrypt and Persist to GCS",
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "version": "6.0.0",
+        "scope": "SYSTEM"
+    },
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "File List Capturer",
+                "to": "fileCompressEncryptGCSBatchSink"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {},
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "name": "File List Capturer",
+                "plugin": {
+                    "name": "FileListSource",
+                    "type": "batchsource",
+                    "label": "File List Capturer",
+                    "artifact": {
+                        "name": "FileListSource",
+                        "version": "1.0.0",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "scheme": "file",
+                        "recursiveCopy": "true",
+                        "sourcePaths": "${SOURCE_FILE_PATH}",
+                        "referenceName": "FL1",
+                        "maxSplitSize": "${SPLIT_SIZE}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"etlSchemaBody\",\"type\":\"record\",\"fields\":[{\"name\":\"fileName\",\"type\":\"string\"},{\"name\":\"fullPath\",\"type\":\"string\"},{\"name\":\"relativePath\",\"type\":\"string\"},{\"name\":\"hostURI\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsource",
+                "label": "File List Capturer",
+                "icon": "fa-plug",
+                "$$hashKey": "object:1171",
+                "_uiPosition": {
+                    "left": "465px",
+                    "top": "235.5px"
+                }
+            },
+            {
+                "name": "fileCompressEncryptGCSBatchSink",
+                "plugin": {
+                    "name": "fileCompressEncryptGCSBatchSink",
+                    "type": "batchsink",
+                    "label": "fileCompressEncryptGCSBatchSink",
+                    "artifact": {
+                        "name": "filecompressencryptgcs",
+                        "version": "1.0.0",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "compression": "ZIP",
+                        "project": "${GCS_PROJECT_ID}",
+                        "serviceFilePath": "${GCS_SERVICEACCOUNT_JSON_FILE}",
+                        "encryption": "PGP",
+                        "path": "${GCS_BUCKETNAME_PATH}",
+                        "publicKeyPath": "${PGP_PUB_KEY_FILE}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": ""
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "File List Capturer",
+                        "schema": "{\"name\":\"etlSchemaBody\",\"type\":\"record\",\"fields\":[{\"name\":\"fileName\",\"type\":\"string\"},{\"name\":\"fullPath\",\"type\":\"string\"},{\"name\":\"relativePath\",\"type\":\"string\"},{\"name\":\"hostURI\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsink",
+                "label": "fileCompressEncryptGCSBatchSink",
+                "icon": "fa-plug",
+                "$$hashKey": "object:1172",
+                "_uiPosition": {
+                    "left": "765px",
+                    "top": "235.5px"
+                }
+            }
+        ],
+        "schedule": "0 * * * *",
+        "engine": "mapreduce",
+        "numOfRecordsPreview": 100,
+        "description": "Compress / Encrypt and Persist to GCS",
+        "maxConcurrentRuns": 1
+    }
+}
