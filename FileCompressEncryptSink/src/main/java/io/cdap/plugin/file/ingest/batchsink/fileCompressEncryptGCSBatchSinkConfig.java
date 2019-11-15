@@ -1,4 +1,3 @@
-
 package io.cdap.plugin.file.ingest.batchsink;
 
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -9,12 +8,17 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.plugin.file.ingest.utils.GCSPath;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
-
+    private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSinkConfig.class);
 
     private enum CompressorType {
         ZIP("ZIP"),
@@ -103,7 +107,21 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     protected String publicKeyPath;
 
     public String getDestPath() {
-        return GCSPath.from(path).getName();
+        String destinationPath = GCSPath.from(path).getName();
+        if (StringUtils.isNotEmpty(suffix)) {
+            try {
+                //This will throw an exception if format is invalid
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(suffix);
+                LocalDateTime now = LocalDateTime.now();
+                if (!destinationPath.endsWith("/")) {
+                    destinationPath += "/";
+                }
+                destinationPath += now.format(formatter) + "/";
+            } catch (Exception e) {
+                LOG.error("Error while processing suffix - ", e);
+            }
+        }
+        return destinationPath;
     }
 
 
