@@ -1,65 +1,67 @@
 
 package io.cdap.plugin.file.ingest.batchsink;
 
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.ServiceOptions;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
-
 import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.plugin.file.ingest.utils.GCSPath;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import com.google.cloud.ServiceOptions;
-import com.google.auth.oauth2.ServiceAccountCredentials;
 
 public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
 
-  private enum CompressorType {
-    ZIP("ZIP"),
-    NONE("NONE");
-    private String type;
-    CompressorType(String type) {
-      this.type = type;
+    private enum CompressorType {
+        ZIP("ZIP"),
+        NONE("NONE");
+        private String type;
+
+        CompressorType(String type) {
+            this.type = type;
+        }
+
+        String getType() {
+            return type;
+        }
     }
-    String getType() {
-      return type;
-    }
-  }
 
 
-  private enum EncryptionType {
-    PGP("PGP"),
-    NONE("NONE");
-    private String type;
-    EncryptionType(String type) {
-      this.type = type;
-    }
-    String getType() {
-      return type;
-    }
-  }
+    private enum EncryptionType {
+        PGP("PGP"),
+        NONE("NONE");
+        private String type;
 
-  public static final String NAME_COMPRESSION = "compression";
-  public static final String NAME_ENCRYPTION = "encryption";
-  public static final String NAME_PATH = "path";
-  public static final String NAME_SUFFIX = "suffix";
-  public static final String NAME_PROJECT = "project";
-  public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
-  public static final String AUTO_DETECT = "auto-detect";
-  public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
+        EncryptionType(String type) {
+            this.type = type;
+        }
 
+        String getType() {
+            return type;
+        }
+    }
+
+    public static final String NAME_COMPRESSION = "compression";
+    public static final String NAME_ENCRYPTION = "encryption";
+    public static final String NAME_PATH = "path";
+    public static final String NAME_SUFFIX = "suffix";
+    public static final String NAME_PROJECT = "project";
+    public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
+    public static final String AUTO_DETECT = "auto-detect";
+    public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
 
 
     @Name(NAME_COMPRESSION)
     @Description("Specify the compression algorithm. If None is selected then data is not compressed.")
-    protected String compression= CompressorType.ZIP.getType();
+    protected String compression = CompressorType.ZIP.getType();
 
     @Name(NAME_ENCRYPTION)
     @Description("Specify the encryption algorithm. If None is selected then data is not encrypted.")
-    protected String encryption= EncryptionType.PGP.getType();
+    protected String encryption = EncryptionType.PGP.getType();
 
 
     protected static final String SCHEME = "gs://";
@@ -100,67 +102,67 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Nullable
     protected String publicKeyPath;
 
-  public String getDestPath(){
-    return GCSPath.from(path).getName();
-  }
+    public String getDestPath() {
+        return GCSPath.from(path).getName();
+    }
 
 
-  public String getBucket() {
-      return GCSPath.from(path).getBucket();
+    public String getBucket() {
+        return GCSPath.from(path).getBucket();
     }
 
     public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath) {
-      this.compression = compression;
-      this.encryption = encryption;
-      this.path = path;
-      this.suffix = suffix;
-      this.project=project;
-      this.serviceFilePath=serviceFilePath;
-      this.publicKeyPath=publicKeyPath;
+        this.compression = compression;
+        this.encryption = encryption;
+        this.path = path;
+        this.suffix = suffix;
+        this.project = project;
+        this.serviceFilePath = serviceFilePath;
+        this.publicKeyPath = publicKeyPath;
     }
 
     public String getProject() {
-      String projectId = tryGetProject();
-      if (projectId == null) {
-        throw new IllegalArgumentException(
-                "Could not detect Google Cloud project id from the environment. Please specify a project id.");
-      }
-      return projectId;
+        String projectId = tryGetProject();
+        if (projectId == null) {
+            throw new IllegalArgumentException(
+                    "Could not detect Google Cloud project id from the environment. Please specify a project id.");
+        }
+        return projectId;
     }
 
-    public boolean compressFile(){
-         if ( Strings.isNullOrEmpty(compression) || compression.equals(CompressorType.NONE.getType()) )
-                return false;
-         return true;
+    public boolean compressFile() {
+        if (Strings.isNullOrEmpty(compression) || compression.equals(CompressorType.NONE.getType()))
+            return false;
+        return true;
 
     }
 
 
-    public boolean encryptFile(){
-        if ( Strings.isNullOrEmpty(encryption) || compression.equals(EncryptionType.NONE.getType()) )
+    public boolean encryptFile() {
+        if (Strings.isNullOrEmpty(encryption) || compression.equals(EncryptionType.NONE.getType()))
             return false;
         return true;
     }
 
     @Nullable
     public String tryGetProject() {
-      if (containsMacro(NAME_PROJECT) && Strings.isNullOrEmpty(project)) {
-        return null;
-      }
-      String projectId = project;
-      if (Strings.isNullOrEmpty(project) || AUTO_DETECT.equals(project)) {
-        projectId = ServiceOptions.getDefaultProjectId();
-      }
-      return projectId;
+        if (containsMacro(NAME_PROJECT) && Strings.isNullOrEmpty(project)) {
+            return null;
+        }
+        String projectId = project;
+        if (Strings.isNullOrEmpty(project) || AUTO_DETECT.equals(project)) {
+            projectId = ServiceOptions.getDefaultProjectId();
+        }
+        return projectId;
     }
 
     @Nullable
     public String getServiceAccountFilePath() {
-      if (containsMacro(NAME_SERVICE_ACCOUNT_FILE_PATH) || serviceFilePath == null ||
-              serviceFilePath.isEmpty() || AUTO_DETECT.equals(serviceFilePath)) {
-        return null;
-      }
-      return serviceFilePath;
+        if (containsMacro(NAME_SERVICE_ACCOUNT_FILE_PATH) || serviceFilePath == null ||
+                serviceFilePath.isEmpty() || AUTO_DETECT.equals(serviceFilePath)) {
+            return null;
+        }
+        return serviceFilePath;
     }
 
     /**
@@ -171,29 +173,30 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
      * @return true if the service account is set to auto-detect but it can't be fetched from the environment.
      */
     public boolean autoServiceAccountUnavailable() {
-      if (getServiceAccountFilePath() == null) {
-        try {
-          ServiceAccountCredentials.getApplicationDefault();
-        } catch (IOException e) {
-          return true;
+        if (getServiceAccountFilePath() == null) {
+            try {
+                ServiceAccountCredentials.getApplicationDefault();
+            } catch (IOException e) {
+                return true;
+            }
         }
-      }
-      return false;
+        return false;
     }
-  public String getCompressor() {
-    return compression;
-  }
 
-  public String getEncryption() {
-    return encryption;
-  }
+    public String getCompressor() {
+        return compression;
+    }
 
-  public String getPath() {
-    return path;
-  }
+    public String getEncryption() {
+        return encryption;
+    }
 
-  @Nullable
-  public String getPublicKeyPath() {
-    return publicKeyPath;
-  }
+    public String getPath() {
+        return path;
+    }
+
+    @Nullable
+    public String getPublicKeyPath() {
+        return publicKeyPath;
+    }
 }
