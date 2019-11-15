@@ -41,6 +41,14 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     @Override
     public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
         super.configurePipeline(pipelineConfigurer);
+    }
+
+    // prepareRun is called before every pipeline run, and is used to configure what the input should be,
+    // as well as any arguments the input should use. It is called by the client that is submitting the batch job.
+    @Override
+    public void prepareRun(BatchSinkContext context) throws Exception {
+        context.addOutput(Output.of("FileCopyOutputFormatProvider", new FileCopyOutputFormatProvider(config)));
+
         if (config.encryptFile() && StringUtils.isEmpty(config.getPublicKeyPath())) {
             throw new IllegalArgumentException(String.format("Encryption enabled and PGP Public Key path is missing for %s plugin. Please provide the same.", NAME));
         }
@@ -51,15 +59,6 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
                 throw new IllegalArgumentException(String.format("Suffix has a invalid date format for %s plugin. Please correct the same.", NAME));
             }
         }
-        LOG.info("Completed configurePipeline");
-    }
-
-    // prepareRun is called before every pipeline run, and is used to configure what the input should be,
-    // as well as any arguments the input should use. It is called by the client that is submitting the batch job.
-    @Override
-    public void prepareRun(BatchSinkContext context) throws Exception {
-        context.addOutput(Output.of("FileCopyOutputFormatProvider", new FileCopyOutputFormatProvider(config)));
-        LOG.info("Completed prepareRun");
     }
 
     // onRunFinish is called at the end of the pipeline run by the client that submitted the batch job.
@@ -74,7 +73,6 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     @Override
     public void initialize(BatchRuntimeContext context) throws Exception {
         super.initialize(context);
-        LOG.info("Completed Initialization");
     }
 
     // destroy is called by each job executor at the end of its life.
@@ -86,11 +84,11 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
 
     @Override
     public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileListData>> emitter) throws Exception {
-        LOG.info("Inside Transform");
+
         FileListData output;
         output = new FileListData(input);
         emitter.emit(new KeyValue<NullWritable, FileListData>(null, output));
-        LOG.info("Exiting Transform");
+        
     }
 
     /**

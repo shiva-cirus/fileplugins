@@ -360,7 +360,7 @@ public class FileCompressEncrypt {
                      storage.writer(blobInfo)) {
             int limit;
             while ((limit = inputStream.read(buffer)) >= 0) {
-                System.out.println("upload file " + limit);
+
                 writer.write(ByteBuffer.wrap(buffer, 0, limit));
             }
         }

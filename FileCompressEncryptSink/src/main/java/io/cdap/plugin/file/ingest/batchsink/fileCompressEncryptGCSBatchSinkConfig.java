@@ -84,7 +84,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
     public String getDestPath() {
         String destinationPath = GCSPath.from(path).getName();
-        if (StringUtils.isNotEmpty(suffix)) {
+        if ( StringUtils.isNotEmpty(suffix)) {
             try {
                 //This will throw an exception if format is invalid
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(suffix);
@@ -95,6 +95,9 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
                 destinationPath += now.format(formatter) + "/";
             } catch (Exception e) {
                 LOG.error("Error while processing suffix - ", e);
+                throw new IllegalArgumentException(
+                        "Error while processing suffix.");
+
             }
         }
         return destinationPath;
@@ -123,6 +126,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     public boolean encryptFile() {
         if (Strings.isNullOrEmpty(encryption) || encryption.equals(EncryptionType.NONE.getType()))
             return false;
+
         return true;
     }
 
@@ -178,6 +182,9 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     }
 
     public String getSuffix() {
+
+
+
         return suffix;
     }
 
