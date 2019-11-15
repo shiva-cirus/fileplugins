@@ -66,7 +66,7 @@ public class FileCopyOutputFormat extends OutputFormat {
     }
 
     public static void setGCSDestPathSuffix(Map<String, String> conf, String value) {
-        conf.put(NAME_GCS_DESTPATH_SUFFIX, value);
+        conf.put(NAME_GCS_DESTPATH_SUFFIX, value == null ? "" : value);
     }
 
     public static void setPGPPubKey(Map<String, String> conf, String value) {
