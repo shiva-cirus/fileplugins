@@ -173,7 +173,7 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
             String fileName = fileListData.getFullPath();
             if (fileName != null) {
                 try {
-                    fileMetaData = getFileMetaData(fileName, "");
+                    fileMetaData = getFileMetaData(fileName, fileListData.getFileName(), "");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -259,8 +259,8 @@ public final class CompressorEncryptorSink extends SparkSink<StructuredRecord> {
         }*/
     }
 
-    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return new FileMetaData(filePath, conf);
+    private static FileMetaData getFileMetaData(String filePath, String fileName, String uri) throws IOException {
+        return new FileMetaData(filePath, fileName, conf);
     }
 
     /**
