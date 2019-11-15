@@ -93,16 +93,6 @@
       <artifactId>hadoop-client</artifactId>
       <version>${hadoop.version}</version>
     </dependency>
-    <!--<dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-crypto</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <version>1.19</version>
-    </dependency>-->
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
@@ -114,17 +104,6 @@
       <version>${cdap.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpg-jdk15on</artifactId>
-      <version>1.58</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-storage</artifactId>
-      <version>1.99.0</version>
-    </dependency>
-
     <dependency>
       <groupId>io.cdap.cdap</groupId>
       <artifactId>hydrator-test</artifactId>
@@ -201,21 +180,9 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-storage</artifactId>
-      <version>1.90.0</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
-    <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>28.1-jre</version>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpg-jdk15on</artifactId>
-      <version>1.58</version>
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
