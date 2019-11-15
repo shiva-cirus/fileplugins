@@ -76,7 +76,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
      */
     public FileCopyRecordWriter(Configuration conf) throws IOException {
 
-        LOG.info("Initializating of RecordWriter");
+        LOG.info("Initializing of RecordWriter");
 
         if (conf.get(FileCopyOutputFormat.NAME_FILECOMPRESSION).equals("NONE")) {
             compression = false;
@@ -92,7 +92,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         } else {
             encryption = true;
             LOG.info("Encryption is set to true");
-
         }
 
         bucketname = conf.get(FileCopyOutputFormat.NAME_GCS_BUCKET, null);
@@ -140,7 +139,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         try {
             credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         }
 
         Storage storage = StorageOptions.newBuilder()
@@ -157,7 +156,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
 
         Bucket bucket = storage.get(bucketname);
         if (bucket == null) {
-            System.out.println("Creating new bucket.");
+            LOG.info("Creating new bucket.");
             bucket = storage.create(BucketInfo.of(bucketname));
         }
         return bucket;
@@ -202,7 +201,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
             try {
                 fileMetaData = getFileMetaData(fileName, fileListData.getHostURI());
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error(e.getMessage(), e);
             }
 
         }
@@ -224,17 +223,17 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
                          storage.writer(blobInfo)) {
                 int limit;
                 while ((limit = inputStream.read(buffer)) >= 0) {
-                    System.out.println("upload file " + limit);
+                    LOG.info("upload file " + limit);
                     writer.write(ByteBuffer.wrap(buffer, 0, limit));
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         }
         try {
             inputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         }
 
 

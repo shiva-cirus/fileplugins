@@ -14,10 +14,12 @@ import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.plugin.file.ingest.common.FileListData;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +42,16 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
     @Override
     public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
         super.configurePipeline(pipelineConfigurer);
+        if (config.encryptFile() && StringUtils.isEmpty(config.getPublicKeyPath())) {
+            throw new IllegalArgumentException(String.format("Encryption enabled and PGP Public Key path is missing for %s plugin. Please provide the same.", NAME));
+        }
+        if (StringUtils.isNotEmpty(config.getSuffix())){
+            try {
+                DateTimeFormatter.ofPattern(config.getSuffix());
+            }catch (Exception e){
+                throw new IllegalArgumentException(String.format("Suffix has a invalid date format for %s plugin. Please correct the same.", NAME));
+            }
+        }
         LOG.info("Completed configurePipeline");
     }
 
@@ -111,9 +123,5 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
             return FileCopyOutputFormat.class.getName();
         }
     }
-
-
-
-
 }
 

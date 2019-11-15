@@ -213,6 +213,10 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
         return path;
     }
 
+    public String getSuffix() {
+        return suffix;
+    }
+
     @Nullable
     public String getPublicKeyPath() {
         return publicKeyPath;

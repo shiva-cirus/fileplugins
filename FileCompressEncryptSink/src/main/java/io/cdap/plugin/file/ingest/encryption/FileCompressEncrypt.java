@@ -165,7 +165,7 @@ public class FileCompressEncrypt {
                                     boolean armor,
                                     boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
         if (compressFile && encryptFile) {
-            compressAndEncryptFile(out, fileMetaData, compressFile, encryptFile, encKey, armor, withIntegrityCheck);
+            compressAndEncryptFile(out, fileMetaData, encKey, armor, withIntegrityCheck);
         } else if (compressFile) {
             compressOnly(out, fileMetaData, armor);
         } else if (encryptFile) {
@@ -237,7 +237,7 @@ public class FileCompressEncrypt {
     private static void compressAndEncryptFile(
             OutputStream out,
             FileMetaData fileMetaData,
-            boolean compressFile, boolean encryptFile, PGPPublicKey encKey,
+            PGPPublicKey encKey,
             boolean armor,
             boolean withIntegrityCheck)
             throws IOException, NoSuchProviderException {
