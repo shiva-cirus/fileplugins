@@ -33,7 +33,6 @@ import java.util.zip.ZipOutputStream;
 /**
  * @author Vikas K  Created On 09/11/19
  **/
-
 public class FileCompressEncrypt {
     private static final int INT = 1 << 16;
     static Storage storage = null;
@@ -54,111 +53,6 @@ public class FileCompressEncrypt {
                         .setProjectId(projectId)
                         .build()
                         .getService();
-    }
-
-    private static void decryptFile(
-            String inputFileName,
-            String keyFileName,
-            char[] passwd,
-            String defaultFileName)
-            throws IOException, NoSuchProviderException {
-        InputStream in = new BufferedInputStream(new FileInputStream(inputFileName));
-        InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
-        decryptFile(in, keyIn, passwd, defaultFileName);
-        keyIn.close();
-        in.close();
-    }
-
-    /**
-     * decrypt the passed in message stream
-     */
-    private static void decryptFile(
-            InputStream in,
-            InputStream keyIn,
-            char[] passwd,
-            String defaultFileName)
-            throws IOException, NoSuchProviderException {
-        in = PGPUtil.getDecoderStream(in);
-
-        try {
-            JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
-            PGPEncryptedDataList enc;
-
-            Object o = pgpF.nextObject();
-            //
-            // the first object might be a PGP marker packet.
-            //
-            if (o instanceof PGPEncryptedDataList) {
-                enc = (PGPEncryptedDataList) o;
-            } else {
-                enc = (PGPEncryptedDataList) pgpF.nextObject();
-            }
-
-            //
-            // find the secret key
-            //
-            Iterator it = enc.getEncryptedDataObjects();
-            PGPPrivateKey sKey = null;
-            PGPPublicKeyEncryptedData pbe = null;
-            PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(
-                    PGPUtil.getDecoderStream(keyIn), new JcaKeyFingerprintCalculator());
-
-            while (sKey == null && it.hasNext()) {
-                pbe = (PGPPublicKeyEncryptedData) it.next();
-
-                sKey = PGPCertUtil.findSecretKey(pgpSec, pbe.getKeyID(), passwd);
-            }
-
-            if (sKey == null) {
-                throw new IllegalArgumentException("secret key for message not found.");
-            }
-
-            InputStream clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(sKey));
-
-            JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
-
-            PGPCompressedData cData = (PGPCompressedData) plainFact.nextObject();
-
-            InputStream compressedStream = new BufferedInputStream(cData.getDataStream());
-            JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(compressedStream);
-
-            Object message = pgpFact.nextObject();
-
-            if (message instanceof PGPLiteralData) {
-                PGPLiteralData ld = (PGPLiteralData) message;
-
-                String outFileName = ld.getFileName();
-                if (outFileName.length() == 0) {
-                    outFileName = defaultFileName;
-                }
-
-                InputStream unc = ld.getInputStream();
-                OutputStream fOut = new BufferedOutputStream(new FileOutputStream(outFileName));
-
-                Streams.pipeAll(unc, fOut);
-
-                fOut.close();
-            } else if (message instanceof PGPOnePassSignatureList) {
-                throw new PGPException("encrypted message contains a signed message - not literal data.");
-            } else {
-                throw new PGPException("message is not a simple encrypted file - type unknown.");
-            }
-
-            if (pbe.isIntegrityProtected()) {
-                if (!pbe.verify()) {
-                    System.err.println("message failed integrity check");
-                } else {
-                    System.err.println("message integrity check passed");
-                }
-            } else {
-                System.err.println("no message integrity check");
-            }
-        } catch (PGPException e) {
-            System.err.println(e);
-            if (e.getUnderlyingException() != null) {
-                e.getUnderlyingException().printStackTrace();
-            }
-        }
     }
 
     private static void encryptFile(OutputStream out,
@@ -234,7 +128,6 @@ public class FileCompressEncrypt {
 
     private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData, Integer bufferSize) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
-        //IOUtils.copy(inputStream, out);
 
         byte[] buffer = new byte[bufferSize];
 
@@ -285,11 +178,6 @@ public class FileCompressEncrypt {
         }
     }
 
-    private static void decryption(String inFile) throws IOException, NoSuchProviderException {
-        String privateKeyPassword = "passphrase";
-        decryptFile(inFile, "PGP1D0.skr", privateKeyPassword.toCharArray(), "abc11.txt");
-    }
-
     public static void writeFileToLiteralData(OutputStream var0, char var1, FileMetaData fileMetaData, byte[] var3) throws IOException {
         PGPLiteralDataGenerator var4 = new PGPLiteralDataGenerator();
         OutputStream var5 = var4.open(var0, var1, fileMetaData.getPath().getName(), new Date(fileMetaData.getLastModifiedTime()), var3);
@@ -308,10 +196,6 @@ public class FileCompressEncrypt {
 
         var1.close();
         var3.close();
-    }
-
-    private static FileMetaData getFileMetaData(String filePath, String fileName, String uri) throws IOException {
-        return new FileMetaData(filePath, fileName, conf);
     }
 
     public static InputStream gcsWriter(FileMetaData fileMetaData, boolean compressFile, boolean encryptFile, PGPPublicKey encKey, Integer bufferSize) throws IOException {
@@ -339,67 +223,5 @@ public class FileCompressEncrypt {
                 })
                 .start();
         return inPipe;
-    }
-
-    public static void encryptionCompressAndUploadGCSWithThread(String inFilePath, String inFileName, String bucketName, String uploadFileName) throws IOException, NoSuchProviderException, PGPException {
-
-
-        PGPPublicKey encKey = PGPCertUtil.readPublicKey("PGP1D0.pkr");
-
-        BlobId blobId = BlobId.of(bucketName, uploadFileName);
-        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
-        FileMetaData fileMetaData = new FileMetaData(inFilePath, inFileName, conf);
-        InputStream inputStream = gcsWriter(fileMetaData, true, true, encKey, 1024);
-        /*try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-        byte[] buffer = new byte[INT];
-        try (WriteChannel writer =
-                     storage.writer(blobInfo)) {
-            int limit;
-            while ((limit = inputStream.read(buffer)) >= 0) {
-
-                writer.write(ByteBuffer.wrap(buffer, 0, limit));
-            }
-        }
-        inputStream.close();
-
-
-    }
-
-    private static void encOnLocalFileSys(String inFileName, String outFileName) throws IOException, NoSuchProviderException, PGPException {
-
-
-        PGPPublicKey encKey = PGPCertUtil.readPublicKey("PGP1D0.pkr");
-
-        //InputStream inputStream = gcsWriter( inFileName, encKey);
-
-        //encryptFile(new FileOutputStream(new File(outFileName)), inFileName, encKey, false, true);
-
-
-    }
-
-    public static void main(
-            String[] args)
-            throws Exception {
-        Security.addProvider(new BouncyCastleProvider());
-        FileCompressEncrypt googleCloudStorage =
-                new FileCompressEncrypt("rugged-alloy-254904-08590d697da8.json", "rugged-alloy-254904");
-
-        //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
-
-        String inFilePath = "input/pkg1_vikas.csv";
-        String inFileName = "pkg1_vikas.csv";
-        String bucketName = "cdap_vikas";
-        String uploadFileName = "pkg1_vikas.csv.asc";
-
-        encryptionCompressAndUploadGCSWithThread(inFilePath, inFileName, bucketName, uploadFileName);
-
-
-        decryption("/Users/vikaskumar/Downloads/pkg1_vikas.csv.asc");
-        //decryption("output/pkg2_vikas.csv.asc");
-
     }
 }
