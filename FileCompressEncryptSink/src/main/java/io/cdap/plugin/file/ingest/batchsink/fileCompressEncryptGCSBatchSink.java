@@ -99,14 +99,15 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
 
         public FileCopyOutputFormatProvider(fileCompressEncryptGCSBatchSinkConfig config) {
             this.conf = new HashMap<>();
-            FileCopyOutputFormat.setCompression(conf, config.compression);
-            FileCopyOutputFormat.setEncryption(conf, config.encryption);
+            FileCopyOutputFormat.setCompression(conf, config.getCompressor());
+            FileCopyOutputFormat.setEncryption(conf, config.getEncryption());
             FileCopyOutputFormat.setGCSBucket(conf, config.getBucket());
             FileCopyOutputFormat.setGCSDestPath(conf, config.getDestPath());
-            FileCopyOutputFormat.setGCSDestPathSuffix(conf, config.suffix);
+            FileCopyOutputFormat.setGCSDestPathSuffix(conf, config.getSuffix());
             FileCopyOutputFormat.setPGPPubKey(conf, config.getPublicKeyPath());
             FileCopyOutputFormat.setGCSProjectID(conf, config.getProject());
             FileCopyOutputFormat.setGCSServiceAccount(conf, config.getServiceAccountFilePath());
+            FileCopyOutputFormat.setBufferSize(conf, config.getBufferSize());
         }
 
         @Override

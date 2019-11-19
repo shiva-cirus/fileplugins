@@ -26,6 +26,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
     public static final String AUTO_DETECT = "auto-detect";
     public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
+    public static final String NAME_BUFFER_SIZE = "bufferSize";
     public static final String SCHEME = "gs://";
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSinkConfig.class);
@@ -72,7 +73,11 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Nullable
     protected String publicKeyPath;
 
-    public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath) {
+    @Name(NAME_BUFFER_SIZE)
+    @Description("Buffer size to read the contents. The default is 1024")
+    protected String bufferSize;
+
+    public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath, String bufferSize) {
         this.compression = compression;
         this.encryption = encryption;
         this.path = path;
@@ -80,6 +85,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
         this.project = project;
         this.serviceFilePath = serviceFilePath;
         this.publicKeyPath = publicKeyPath;
+        this.bufferSize = bufferSize;
     }
 
     public String getDestPath() {
@@ -182,15 +188,17 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     }
 
     public String getSuffix() {
-
-
-
         return suffix;
     }
 
     @Nullable
     public String getPublicKeyPath() {
         return publicKeyPath;
+    }
+
+    public String getBufferSize() {
+        Integer size=bufferSize==null ?1024:Integer.parseInt(bufferSize);
+        return String.valueOf(size==null || size<=0?1024:size);
     }
 
     private enum CompressorType {

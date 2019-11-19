@@ -83,6 +83,19 @@
 
         }
       ]
+    },
+    {
+      "label": "General",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Buffer Size",
+          "name": "bufferSize",
+          "widget-attributes": {
+            "default": "1024"
+          }
+        }
+      ]
     }
 
   ],

@@ -40,6 +40,8 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 
+import static io.cdap.plugin.file.ingest.batchsink.FileCopyOutputFormat.NAME_BUFFER_SIZE;
+
 /**
  * The record writer that takes file metadata and streams data from source database
  * to destination database
@@ -63,6 +65,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
     private final String destpath;
     private final String suffix;
     private final String gcsserviceaccountjson;
+    private Integer bufferSize;
     private PGPPublicKey encKey = null;
     private Storage storage = null;
     private Bucket bucket = null;
@@ -110,6 +113,11 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
 
         suffix = conf.get(FileCopyOutputFormat.NAME_GCS_DESTPATH_SUFFIX, null);
         LOG.info("Suffix - " + suffix);
+
+        String size = conf.get(FileCopyOutputFormat.NAME_BUFFER_SIZE, null);
+        bufferSize= (size == null || size.equalsIgnoreCase("0")) ? 1024 : Integer.parseInt(size);
+        bufferSize= (bufferSize<=0) ? 1024 : Integer.parseInt(size);
+        LOG.info("Buffer size - " + bufferSize);
 
         if (encryption) {
             //Read the Public Key to Encrypt Data
@@ -209,13 +217,13 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         InputStream inputStream = null;
 
         try {
-            inputStream = FileCompressEncrypt.gcsWriter(fileMetaData, compression, encryption, encKey);
-            byte[] buffer = new byte[1 << 16];
+            inputStream = FileCompressEncrypt.gcsWriter(fileMetaData, compression, encryption, encKey, bufferSize);
+            byte[] buffer = new byte[bufferSize];
             try (WriteChannel writer =
                          storage.writer(blobInfo)) {
                 int limit;
                 while ((limit = inputStream.read(buffer)) >= 0) {
-                    LOG.info("upload file " + limit);
+                    LOG.debug("upload file " + limit);
                     writer.write(ByteBuffer.wrap(buffer, 0, limit));
                 }
             }

@@ -36,6 +36,7 @@ public class FileCopyOutputFormat extends OutputFormat {
     public static final String NAME_GCS_DESTPATH = "gcs.bucket.path";
     public static final String NAME_GCS_DESTPATH_SUFFIX = "gcs.bucket.path.suffix";
     public static final String NAME_PGP_PUBKEY = "file.pgp.pub.key";
+    public static final String NAME_BUFFER_SIZE = "buffer.size";
 
     public static final String FS_SCHEME = "filesystem.scheme";
 
@@ -71,6 +72,10 @@ public class FileCopyOutputFormat extends OutputFormat {
 
     public static void setPGPPubKey(Map<String, String> conf, String value) {
         conf.put(NAME_PGP_PUBKEY, value == null ? "" : value);
+    }
+
+    public static void setBufferSize(Map<String, String> conf, String value) {
+        conf.put(NAME_BUFFER_SIZE, value == null ? "" : value);
     }
 
     @Override

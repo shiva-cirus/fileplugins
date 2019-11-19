@@ -164,20 +164,20 @@ public class FileCompressEncrypt {
     private static void encryptFile(OutputStream out,
                                     FileMetaData fileMetaData,
                                     boolean compressFile, boolean encryptFile, PGPPublicKey encKey,
-                                    boolean armor,
+                                    Integer bufferSize, boolean armor,
                                     boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
         if (compressFile && encryptFile) {
-            compressAndEncryptFile(out, fileMetaData, encKey, armor, withIntegrityCheck);
+            compressAndEncryptFile(out, fileMetaData, encKey, bufferSize, armor, withIntegrityCheck);
         } else if (compressFile) {
-            compressOnly(out, fileMetaData);
+            compressOnly(out, fileMetaData, bufferSize);
         } else if (encryptFile) {
-            encryptOnly(out, fileMetaData, encKey, armor, withIntegrityCheck);
+            encryptOnly(out, fileMetaData, encKey, bufferSize, armor, withIntegrityCheck);
         } else {
-            noCompressNoEncrypt(out, fileMetaData);
+            noCompressNoEncrypt(out, fileMetaData, bufferSize);
         }
     }
 
-    private static void compressOnly(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
+    private static void compressOnly(OutputStream out, FileMetaData fileMetaData, Integer bufferSize) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
         ZipOutputStream zipOutputStream = new ZipOutputStream(out);
         //IOUtils.copy(inputStream, zipOutputStream);
@@ -191,7 +191,7 @@ public class FileCompressEncrypt {
         }
         */
 
-        byte[] buffer = new byte[1 << 16];
+        byte[] buffer = new byte[bufferSize];
         zipOutputStream.putNextEntry(new ZipEntry(fileMetaData.getFileName()));
         int length;
         while ((length = inputStream.read()) >= 0) {
@@ -204,7 +204,7 @@ public class FileCompressEncrypt {
         inputStream.close();
     }
 
-    private static void encryptOnly(OutputStream out, FileMetaData fileMetaData, PGPPublicKey encKey, boolean armor, boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
+    private static void encryptOnly(OutputStream out, FileMetaData fileMetaData, PGPPublicKey encKey, Integer bufferSize, boolean armor, boolean withIntegrityCheck) throws IOException, NoSuchProviderException {
         if (armor) {
             out = new ArmoredOutputStream(out);
         }
@@ -214,10 +214,10 @@ public class FileCompressEncrypt {
 
             cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider(new BouncyCastleProvider()));
 
-            OutputStream cOut = cPk.open(out, new byte[1 << 16]);
+            OutputStream cOut = cPk.open(out, new byte[bufferSize]);
 
             //PGPUtil.writeFileToLiteralData(cOut, PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
-            writeFileToLiteralData(cOut, PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
+            writeFileToLiteralData(cOut, PGPLiteralData.BINARY, fileMetaData, new byte[bufferSize]);
 
             cOut.close();
 
@@ -232,11 +232,11 @@ public class FileCompressEncrypt {
         }
     }
 
-    private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
+    private static void noCompressNoEncrypt(OutputStream out, FileMetaData fileMetaData, Integer bufferSize) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
         //IOUtils.copy(inputStream, out);
 
-        byte[] buffer = new byte[1 << 16];
+        byte[] buffer = new byte[bufferSize];
 
         int size;
         while ((size = inputStream.read(buffer)) > 0) {
@@ -250,6 +250,7 @@ public class FileCompressEncrypt {
             OutputStream out,
             FileMetaData fileMetaData,
             PGPPublicKey encKey,
+            Integer bufferSize,
             boolean armor,
             boolean withIntegrityCheck)
             throws IOException, NoSuchProviderException {
@@ -262,13 +263,13 @@ public class FileCompressEncrypt {
 
             cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(encKey).setProvider(new BouncyCastleProvider()));
 
-            OutputStream cOut = cPk.open(out, new byte[1 << 16]);
+            OutputStream cOut = cPk.open(out, new byte[bufferSize]);
 
             PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
                     PGPCompressedData.ZIP);
 
             //PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
-            writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, fileMetaData, new byte[1 << 16]);
+            writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, fileMetaData, new byte[bufferSize]);
             comData.close();
 
             cOut.close();
@@ -313,8 +314,7 @@ public class FileCompressEncrypt {
         return new FileMetaData(filePath, fileName, conf);
     }
 
-    public static InputStream gcsWriter(FileMetaData fileMetaData, boolean compressFile, boolean encryptFile, PGPPublicKey encKey) throws IOException {
-        //InputStream inputStream = new FileInputStream(inFileName);
+    public static InputStream gcsWriter(FileMetaData fileMetaData, boolean compressFile, boolean encryptFile, PGPPublicKey encKey, Integer bufferSize) throws IOException {
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
         inPipe.connect(outPipe);
@@ -322,7 +322,7 @@ public class FileCompressEncrypt {
         new Thread(
                 () -> {
                     try {
-                        encryptFile(outPipe, fileMetaData, compressFile, encryptFile, encKey, false, true);
+                        encryptFile(outPipe, fileMetaData, compressFile, encryptFile, encKey, bufferSize, false, true);
                         //Thread.sleep(10000);
                         //outPipe.close();
                     } catch (IOException e) {
@@ -349,7 +349,7 @@ public class FileCompressEncrypt {
         BlobId blobId = BlobId.of(bucketName, uploadFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/pgp-encrypted").build();
         FileMetaData fileMetaData = new FileMetaData(inFilePath, inFileName, conf);
-        InputStream inputStream = gcsWriter(fileMetaData, true, true, encKey);
+        InputStream inputStream = gcsWriter(fileMetaData, true, true, encKey, 1024);
         /*try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
