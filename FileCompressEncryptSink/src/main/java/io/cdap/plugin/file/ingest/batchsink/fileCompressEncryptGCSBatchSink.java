@@ -14,6 +14,7 @@ import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.plugin.file.ingest.common.FileListData;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,9 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
                 throw new IllegalArgumentException(String.format("Suffix has a invalid date format for %s plugin. Please correct the same.", NAME));
             }
         }
+        if (!NumberUtils.isCreatable(config.getBufferSize())) {
+            throw new IllegalArgumentException(String.format("Buffer size must be a numeric value for %s plugin. Please provide the same.", NAME));
+        }
     }
 
     // onRunFinish is called at the end of the pipeline run by the client that submitted the batch job.
@@ -84,11 +88,8 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
 
     @Override
     public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileListData>> emitter) throws Exception {
-
-        FileListData output;
-        output = new FileListData(input);
+        FileListData output = new FileListData(input);
         emitter.emit(new KeyValue<NullWritable, FileListData>(null, output));
-        
     }
 
     /**

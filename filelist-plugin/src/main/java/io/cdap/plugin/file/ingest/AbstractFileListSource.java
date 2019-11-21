@@ -32,6 +32,7 @@ import org.apache.hadoop.io.NullWritable;
 /**
  * Abstract class for FileCopySource plugin. Extracts metadata of desired files
  * from the source database.
+ *
  * @param <K> the FileListData class specific to each filesystem.
  */
 public abstract class AbstractFileListSource<K extends FileListData>
@@ -53,6 +54,7 @@ public abstract class AbstractFileListSource<K extends FileListData>
 
     /**
      * Initialize the output StructuredRecord Schema here.
+     *
      * @param context
      * @throws Exception
      */
@@ -72,6 +74,17 @@ public abstract class AbstractFileListSource<K extends FileListData>
      * Convert file metadata to StructuredRecord and emit.
      */
     public abstract void transform(KeyValue<NullWritable, K> input, Emitter<StructuredRecord> emitter);
+
+    /**
+     * This method initializes the configuration instance with fields that are shared by all plugins.
+     *
+     * @param conf The configuration we wish to initialize.
+     */
+    protected void setDefaultConf(Configuration conf) {
+        FileListInputFormat.setSourcePaths(conf, config.sourcePaths);
+        FileListInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
+        FileListInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
+    }
 
     /**
      * Abstract class for the configuration of FileCopySink
@@ -104,19 +117,4 @@ public abstract class AbstractFileListSource<K extends FileListData>
             }
         }
     }
-
-    /**
-     * This method initializes the configuration instance with fields that are shared by all plugins.
-     *
-     * @param conf The configuration we wish to initialize.
-     */
-    protected void setDefaultConf(Configuration conf) {
-        FileListInputFormat.setSourcePaths(conf, config.sourcePaths);
-        FileListInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
-        FileListInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
-    }
-
-    /*
-     * Put additional configurations here for specific databases.
-     */
 }

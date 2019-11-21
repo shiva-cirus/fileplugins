@@ -75,6 +75,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
     @Name(NAME_BUFFER_SIZE)
     @Description("Buffer size to read the contents. The default is 1024")
+    @Macro
     protected String bufferSize;
 
     public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath, String bufferSize) {
@@ -90,7 +91,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
     public String getDestPath() {
         String destinationPath = GCSPath.from(path).getName();
-        if ( StringUtils.isNotEmpty(suffix)) {
+        if (StringUtils.isNotEmpty(suffix)) {
             try {
                 //This will throw an exception if format is invalid
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(suffix);
@@ -197,8 +198,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     }
 
     public String getBufferSize() {
-        Integer size=bufferSize==null ?1024:Integer.parseInt(bufferSize);
-        return String.valueOf(size==null || size<=0?1024:size);
+        return bufferSize;
     }
 
     private enum CompressorType {

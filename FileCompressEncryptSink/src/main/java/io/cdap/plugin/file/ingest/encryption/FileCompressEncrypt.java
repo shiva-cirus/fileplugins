@@ -2,9 +2,6 @@ package io.cdap.plugin.file.ingest.encryption;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.WriteChannel;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
@@ -13,20 +10,13 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
-import org.bouncycastle.util.io.Streams;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -86,7 +76,7 @@ public class FileCompressEncrypt {
         */
 
         byte[] buffer = new byte[bufferSize];
-        zipOutputStream.putNextEntry(new ZipEntry(fileMetaData.getFileName()));
+        zipOutputStream.putNextEntry(new ZipEntry(fileMetaData.getPath().getName()));
         int length;
         while ((length = inputStream.read()) >= 0) {
             zipOutputStream.write(buffer, 0, length);
@@ -158,8 +148,7 @@ public class FileCompressEncrypt {
 
             OutputStream cOut = cPk.open(out, new byte[bufferSize]);
 
-            PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
-                    PGPCompressedData.ZIP);
+            PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
 
             //PGPUtil.writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, new File(fileName), new byte[1 << 16]);
             writeFileToLiteralData(comData.open(cOut), PGPLiteralData.BINARY, fileMetaData, new byte[bufferSize]);

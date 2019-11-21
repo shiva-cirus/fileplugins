@@ -32,8 +32,8 @@ import java.util.List;
  * Contains a list of fileMetadata that is assigned to the specific split.
  */
 public class FileListInputSplit extends InputSplit implements Writable, Comparable {
-    private List<FileListData> fileMetaDataList;
     private static final Logger LOG = LoggerFactory.getLogger(FileListInputSplit.class);
+    private List<FileListData> fileMetaDataList;
     private long totalBytes;
 
     public FileListInputSplit() {

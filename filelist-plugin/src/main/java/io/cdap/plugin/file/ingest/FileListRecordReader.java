@@ -29,48 +29,48 @@ import java.io.IOException;
  */
 public class FileListRecordReader extends RecordReader<NullWritable, FileListData> {
 
-  protected FileListInputSplit split;
-  private int currentIndex;
+    protected FileListInputSplit split;
+    private int currentIndex;
 
-  public FileListRecordReader() {
-    super();
-  }
-
-  @Override
-  public boolean nextKeyValue() throws IOException, InterruptedException {
-    if ((currentIndex + 1) < split.getLength()) {
-      currentIndex++;
-      return true;
-    } else {
-      return false;
+    public FileListRecordReader() {
+        super();
     }
-  }
 
-  @Override
-  public NullWritable getCurrentKey() throws IOException, InterruptedException {
-    return null;
-  }
+    @Override
+    public boolean nextKeyValue() throws IOException, InterruptedException {
+        if ((currentIndex + 1) < split.getLength()) {
+            currentIndex++;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public NullWritable getCurrentKey() throws IOException, InterruptedException {
+        return null;
+    }
 
 
-  @Override
-  public float getProgress() throws IOException, InterruptedException {
-    return (1 - ((float) currentIndex / split.getLength()));
-  }
+    @Override
+    public float getProgress() throws IOException, InterruptedException {
+        return (1 - ((float) currentIndex / split.getLength()));
+    }
 
-  @Override
-  public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-    throws IOException, InterruptedException {
-    this.split = (FileListInputSplit) inputSplit;
-    this.currentIndex = -1;
-  }
+    @Override
+    public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+            throws IOException, InterruptedException {
+        this.split = (FileListInputSplit) inputSplit;
+        this.currentIndex = -1;
+    }
 
-  @Override
-  public FileListData getCurrentValue() throws IOException, InterruptedException {
-    return split.getFileMetaDataList().get(currentIndex);
-  }
+    @Override
+    public FileListData getCurrentValue() throws IOException, InterruptedException {
+        return split.getFileMetaDataList().get(currentIndex);
+    }
 
-  @Override
-  public void close() throws IOException {
+    @Override
+    public void close() throws IOException {
 
-  }
+    }
 }

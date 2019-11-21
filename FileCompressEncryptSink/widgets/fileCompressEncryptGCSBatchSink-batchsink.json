@@ -21,7 +21,7 @@
       ]
     },
     {
-      "label": "Google Cloud Stogare Parameters",
+      "label": "Google Cloud Storage Parameters",
       "properties": [
         {
           "widget-type": "textbox",

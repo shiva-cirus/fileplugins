@@ -45,6 +45,10 @@ public class FileListInputFormat extends InputFormat {
     protected static final int DEFAULT_MAX_SPLIT_SIZE = 128;
     private static final Logger LOG = LoggerFactory.getLogger(FileListInputFormat.class);
 
+    public FileListInputFormat() {
+        // no op
+    }
+
     public static void setSourcePaths(Configuration conf, String value) {
         conf.set(SOURCE_PATHS, value);
     }
@@ -59,10 +63,6 @@ public class FileListInputFormat extends InputFormat {
 
     public static void setRecursiveCopy(Configuration conf, String value) {
         conf.set(RECURSIVE_COPY, value);
-    }
-
-    public FileListInputFormat() {
-        // no op
     }
 
     @Override
@@ -115,7 +115,7 @@ public class FileListInputFormat extends InputFormat {
         Collections.sort(fileMetaDataList);
         Collections.reverse(fileMetaDataList);
 
-        fileMetaDataList= fileMetaDataList.stream().filter(fileMetadata -> !fileMetadata.isDir()).collect(Collectors.toList());
+        fileMetaDataList = fileMetaDataList.stream().filter(fileMetadata -> !fileMetadata.isDir()).collect(Collectors.toList());
 
         // compute number of splits and instantiate the splits
         // We use a priority queue to keep track of the smallest split (fewest bytes assigned to it)
@@ -153,12 +153,12 @@ public class FileListInputFormat extends InputFormat {
      * the source filesystem, it logs a warning and skips the path.
      *
      * @param fileMetadataList The list that contains all the files under fileStatus.getPath
-     * @param prefix The user-set path that was used to get this group of files
-     * @param path The path of the file that will be inserted into fileMetadataList.
-     * @param recursive Whether or not to recursively scan the directories.
-     * @param filesystem The filesystem that contains the files.
-     * @param conf The configuration that contains credential information needed to connect to the
-     *     filesystem.
+     * @param prefix           The user-set path that was used to get this group of files
+     * @param path             The path of the file that will be inserted into fileMetadataList.
+     * @param recursive        Whether or not to recursively scan the directories.
+     * @param filesystem       The filesystem that contains the files.
+     * @param conf             The configuration that contains credential information needed to connect to the
+     *                         filesystem.
      * @throws IOException
      */
     private void recursivelyAddFileStatus(
@@ -201,9 +201,9 @@ public class FileListInputFormat extends InputFormat {
      *
      * @param fileStatus The FileStatus object that contains the raw metadata of the file
      * @param sourcePath The source path specified by the user that was used to obtain this
-     *     FileListData. Will be used to construct the relativePath field in FileListData.
-     * @param conf The user specified configuration that contains additional credentials required for
-     *     accessing the source filesystem.
+     *                   FileListData. Will be used to construct the relativePath field in FileListData.
+     * @param conf       The user specified configuration that contains additional credentials required for
+     *                   accessing the source filesystem.
      * @return A FileListData instance with its metadata fields populated
      * @throws IOException
      */

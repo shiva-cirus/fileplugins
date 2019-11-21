@@ -12,13 +12,11 @@ import java.io.IOException;
 public class FileMetaData {
     Path path;
     FileSystem fileSystem;
-    String fileName;
 
     private FileMetaData() {
     }
 
-    public FileMetaData(String filePath, String fileName, Configuration conf) {
-        this.fileName = fileName;
+    public FileMetaData(String filePath, Configuration conf) {
         this.path = new Path(filePath);
 
         try {
@@ -26,10 +24,6 @@ public class FileMetaData {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public String getFileName() {
-        return fileName;
     }
 
     public Path getPath() {

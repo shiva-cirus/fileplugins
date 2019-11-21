@@ -48,63 +48,63 @@ import java.util.List;
 @Name("FileListSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
 public class FileListSource extends AbstractFileListSource<FileListData> {
-  private FileMetadataSourceConfig config;
+    private FileMetadataSourceConfig config;
 
-  public FileListSource(FileMetadataSourceConfig config) {
-    super(config);
-    this.config = config;
-  }
-
-  @Override
-  public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
-    super.configurePipeline(pipelineConfigurer);
-    List<Schema.Field> fieldList = new ArrayList<>(FileListData.DEFAULT_SCHEMA.getFields());
-    pipelineConfigurer.getStageConfigurer().setOutputSchema(Schema.recordOf("fileSchema", fieldList));
-  }
-
-  @Override
-  public void prepareRun(BatchSourceContext context) throws Exception {
-    super.prepareRun(context);
-    Job job = JobUtils.createInstance();
-    Configuration conf = job.getConfiguration();
-
-    // initialize configurations
-    setDefaultConf(conf);
-    switch (config.scheme) {
-      case "file" :
-        FileListInputFormat.setURI(conf, new URI(config.scheme, null, Path.SEPARATOR, null).toString());
-        break;
-      case "hdfs" :
-        break;
-      default:
-        throw new IllegalArgumentException("Scheme must be either file or hdfs.");
+    public FileListSource(FileMetadataSourceConfig config) {
+        super(config);
+        this.config = config;
     }
 
-    context.setInput(Input.of(config.referenceName, new SourceInputFormatProvider(FileListInputFormat.class, conf)));
-  }
-
-  /**
-   * Converts the input FileListData to a StructuredRecord and emits it.
-   *
-   * @param input The input FileListData.
-   * @param emitter Emits StructuredRecord that contains FileListData.
-   */
-  @Override
-  public void transform(KeyValue<NullWritable, FileListData> input, Emitter<StructuredRecord> emitter) {
-    emitter.emit(input.getValue().toRecord());
-  }
-
-  /**
-   * Configurations required for connecting to local filesystems.
-   */
-  public class FileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
-
-    @Description("Scheme of the source filesystem.")
-    public String scheme;
-
-    public FileMetadataSourceConfig(String name, String sourcePaths, Integer maxSplitSize, String scheme) {
-      super(name, sourcePaths, maxSplitSize);
-      this.scheme = scheme;
+    @Override
+    public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
+        super.configurePipeline(pipelineConfigurer);
+        List<Schema.Field> fieldList = new ArrayList<>(FileListData.DEFAULT_SCHEMA.getFields());
+        pipelineConfigurer.getStageConfigurer().setOutputSchema(Schema.recordOf("fileSchema", fieldList));
     }
-  }
+
+    @Override
+    public void prepareRun(BatchSourceContext context) throws Exception {
+        super.prepareRun(context);
+        Job job = JobUtils.createInstance();
+        Configuration conf = job.getConfiguration();
+
+        // initialize configurations
+        setDefaultConf(conf);
+        switch (config.scheme) {
+            case "file":
+                FileListInputFormat.setURI(conf, new URI(config.scheme, null, Path.SEPARATOR, null).toString());
+                break;
+            case "hdfs":
+                break;
+            default:
+                throw new IllegalArgumentException("Scheme must be either file or hdfs.");
+        }
+
+        context.setInput(Input.of(config.referenceName, new SourceInputFormatProvider(FileListInputFormat.class, conf)));
+    }
+
+    /**
+     * Converts the input FileListData to a StructuredRecord and emits it.
+     *
+     * @param input   The input FileListData.
+     * @param emitter Emits StructuredRecord that contains FileListData.
+     */
+    @Override
+    public void transform(KeyValue<NullWritable, FileListData> input, Emitter<StructuredRecord> emitter) {
+        emitter.emit(input.getValue().toRecord());
+    }
+
+    /**
+     * Configurations required for connecting to local filesystems.
+     */
+    public class FileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
+
+        @Description("Scheme of the source filesystem.")
+        public String scheme;
+
+        public FileMetadataSourceConfig(String name, String sourcePaths, Integer maxSplitSize, String scheme) {
+            super(name, sourcePaths, maxSplitSize);
+            this.scheme = scheme;
+        }
+    }
 }

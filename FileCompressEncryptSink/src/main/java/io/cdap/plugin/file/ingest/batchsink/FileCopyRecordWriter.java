@@ -24,6 +24,7 @@ import io.cdap.plugin.file.ingest.common.FileListData;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.NullWritable;
@@ -39,8 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
-
-import static io.cdap.plugin.file.ingest.batchsink.FileCopyOutputFormat.NAME_BUFFER_SIZE;
 
 /**
  * The record writer that takes file metadata and streams data from source database
@@ -77,7 +76,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
      * @throws IOException
      */
     public FileCopyRecordWriter(Configuration conf) throws IOException {
-
         LOG.info("Initializing of RecordWriter");
 
         if (conf.get(FileCopyOutputFormat.NAME_FILECOMPRESSION).equals("NONE")) {
@@ -115,15 +113,18 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         LOG.info("Suffix - " + suffix);
 
         String size = conf.get(FileCopyOutputFormat.NAME_BUFFER_SIZE, null);
-        bufferSize= (size == null || size.equalsIgnoreCase("0")) ? 1024 : Integer.parseInt(size);
-        bufferSize= (bufferSize<=0) ? 1024 : Integer.parseInt(size);
-        LOG.info("Buffer size - " + bufferSize);
+        LOG.info("Buffer size - " + size);
+        bufferSize = StringUtils.isNumeric(size) ? Integer.parseInt(size) : 1024;
+        if (bufferSize <= 0) {
+            bufferSize = 1024;
+        }
+        LOG.info("Buffer size applied - " + bufferSize);
 
         if (encryption) {
             //Read the Public Key to Encrypt Data
             try {
                 encKey = PGPCertUtil.readPublicKey(publicKeyPath);
-                LOG.info("Retreived PublicKey");
+                LOG.info("Retrieved PublicKey");
             } catch (PGPException ex) {
                 LOG.error(ex.getMessage());
                 throw new IOException(ex.getMessage());
@@ -137,8 +138,8 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         LOG.info("Created GCS Bucket");
     }
 
-    private static FileMetaData getFileMetaData(String filePath, String fileName, String uri) throws IOException {
-        return new FileMetaData(uri + '/' + filePath, fileName, conf);
+    private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
+        return new FileMetaData(uri + '/' + filePath, conf);
     }
 
     private Storage getGoogleStorage(String serviceAccountJSON, String project) {
@@ -161,7 +162,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
     private Bucket getBucket(Storage storage, String bucketname) {
         Bucket bucket = storage.get(bucketname);
         if (bucket == null) {
-            LOG.info("Creating new bucket.");
+            LOG.info("Creating new bucket '{}'.", bucketname);
             bucket = storage.create(BucketInfo.of(bucketname));
         }
         return bucket;
@@ -178,14 +179,11 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
      */
     @Override
     public void write(NullWritable key, FileListData fileListData) throws IOException, InterruptedException {
-
         if (fileListData.getRelativePath().isEmpty()) {
             return;
         }
 
         // construct file paths for source and destination
-        //Path srcPath = new Path(fileMetadata.getFullPath());
-
         String outFileName = destpath + fileListData.getRelativePath();
         String contentType = "application/octet-stream";
         if (compression) {
@@ -202,7 +200,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         String fullPath = fileListData.getFullPath();
         if (fullPath != null) {
             try {
-                fileMetaData = getFileMetaData(fullPath, fileListData.getFileName(), fileListData.getHostURI());
+                fileMetaData = getFileMetaData(fullPath, fileListData.getHostURI());
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
             }
@@ -211,7 +209,6 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         LOG.info("Output File Name " + outFileName);
 
         BlobId blobId = BlobId.of(bucket.getName(), outFileName);
-
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
 
         InputStream inputStream = null;
