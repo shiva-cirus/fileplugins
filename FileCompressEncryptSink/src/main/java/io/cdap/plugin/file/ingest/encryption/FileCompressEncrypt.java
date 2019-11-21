@@ -179,28 +179,23 @@ public class FileCompressEncrypt {
 
     private static void compressOnly(OutputStream out, FileMetaData fileMetaData) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
-        ZipOutputStream zipOutputStream = new ZipOutputStream(out);
-        //IOUtils.copy(inputStream, zipOutputStream);
 
-        /*
-        byte[] buffer = new byte[1<<16];
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(out)) {
+            zipOutputStream.setMethod(8);
 
-        int size;
-        while ((size = inputStream.read(buffer)) > 0) {
-            zipOutputStream.write(buffer, 0, size);
+            zipOutputStream.setLevel(5);
+
+            ZipEntry zipEntry = new ZipEntry(fileMetaData.getPath().getName());
+
+            zipOutputStream.putNextEntry(zipEntry);
+
+            byte[] buffer = new byte[1 << 16];
+
+            int size;
+            while ((size = inputStream.read(buffer)) > 0) {
+                zipOutputStream.write(buffer, 0, size);
+            }
         }
-        */
-
-        byte[] buffer = new byte[1 << 16];
-        zipOutputStream.putNextEntry(new ZipEntry(fileMetaData.getFileName()));
-        int length;
-        while ((length = inputStream.read()) >= 0) {
-            zipOutputStream.write(buffer, 0, length);
-        }
-        //zipOutputStream.closeEntry();
-        zipOutputStream.finish();
-        zipOutputStream.close();
-
         inputStream.close();
     }
 
@@ -223,6 +218,7 @@ public class FileCompressEncrypt {
 
             if (armor) {
                 out.close();
+
             }
         } catch (PGPException e) {
             System.err.println(e);
