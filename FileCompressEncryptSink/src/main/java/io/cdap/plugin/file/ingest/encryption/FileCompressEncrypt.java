@@ -24,7 +24,6 @@ import java.util.zip.ZipOutputStream;
  * @author Vikas K  Created On 09/11/19
  **/
 public class FileCompressEncrypt {
-    private static final int INT = 1 << 16;
     static Storage storage = null;
     static Configuration conf;
 
@@ -63,28 +62,20 @@ public class FileCompressEncrypt {
 
     private static void compressOnly(OutputStream out, FileMetaData fileMetaData, Integer bufferSize) throws IOException, NoSuchProviderException {
         InputStream inputStream = fileMetaData.getFileSystem().open(fileMetaData.getPath());
-        ZipOutputStream zipOutputStream = new ZipOutputStream(out);
-        //IOUtils.copy(inputStream, zipOutputStream);
 
-        /*
-        byte[] buffer = new byte[1<<16];
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(out)) {
+            zipOutputStream.setMethod(8);
+            zipOutputStream.setLevel(5);
 
-        int size;
-        while ((size = inputStream.read(buffer)) > 0) {
-            zipOutputStream.write(buffer, 0, size);
+            ZipEntry zipEntry = new ZipEntry(fileMetaData.getPath().getName());
+            zipOutputStream.putNextEntry(zipEntry);
+
+            byte[] buffer = new byte[bufferSize];
+            int size;
+            while ((size = inputStream.read(buffer)) > 0) {
+                zipOutputStream.write(buffer, 0, size);
+            }
         }
-        */
-
-        byte[] buffer = new byte[bufferSize];
-        zipOutputStream.putNextEntry(new ZipEntry(fileMetaData.getPath().getName()));
-        int length;
-        while ((length = inputStream.read()) >= 0) {
-            zipOutputStream.write(buffer, 0, length);
-        }
-        //zipOutputStream.closeEntry();
-        zipOutputStream.finish();
-        zipOutputStream.close();
-
         inputStream.close();
     }
 

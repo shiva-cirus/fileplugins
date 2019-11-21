@@ -71,7 +71,8 @@
           "name": "encryption",
           "widget-attributes": {
             "values": [
-              "PGP"
+              "PGP",
+              "NONE"
             ],
             "default": "PGP"
           }
