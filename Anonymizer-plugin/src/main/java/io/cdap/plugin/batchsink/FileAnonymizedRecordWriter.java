@@ -123,7 +123,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             }
 
 
-            System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib" );
+            LOG.info("java.library.path", "/opt/DA/javasimpleapi/lib" );
             Field fieldSysPath = ClassLoader.class.getDeclaredField( "sys_paths" );
             fieldSysPath.setAccessible( true );
             fieldSysPath.set( null, null );
@@ -131,7 +131,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
 
             // Load the JNI library
-            System.loadLibrary("vibesimplejava");
+           System.loadLibrary("vibesimplejava");
 
             // Print the API version
             LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
