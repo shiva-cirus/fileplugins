@@ -119,11 +119,11 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             while (keys.hasMoreElements()) {
                 String key = (String)keys.nextElement();
                 String value = (String)p.get(key);
-                System.out.println(key + " : " + value);
+                LOG.info(key + " : " + value);
             }
 
 
-            System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib" );
+            LOG.info("java.library.path", "/opt/DA/javasimpleapi/lib" );
             Field fieldSysPath = ClassLoader.class.getDeclaredField( "sys_paths" );
             fieldSysPath.setAccessible( true );
             fieldSysPath.set( null, null );
