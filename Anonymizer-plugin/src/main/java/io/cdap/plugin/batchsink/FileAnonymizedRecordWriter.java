@@ -35,7 +35,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Properties;
 
 /**
  * The record writer that takes file metadata and streams data from source database
@@ -110,6 +113,23 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
         try {
             LOG.info("In initialize");
+            LOG.info("Print all default System Properties as seen by Plugin");
+            Properties p = System.getProperties();
+            Enumeration keys = p.keys();
+            while (keys.hasMoreElements()) {
+                String key = (String)keys.nextElement();
+                String value = (String)p.get(key);
+                System.out.println(key + " : " + value);
+            }
+
+
+            System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib" );
+            Field fieldSysPath = ClassLoader.class.getDeclaredField( "sys_paths" );
+            fieldSysPath.setAccessible( true );
+            fieldSysPath.set( null, null );
+
+
+
             // Load the JNI library
             System.loadLibrary("vibesimplejava");
 
@@ -179,7 +199,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     .setSharedSecret(sharedSecret)
                     .setIdentity(identity)
                     .build();
-        }catch (VeException ve) {
+        }catch (VeException | NoSuchFieldException | IllegalAccessException ve) {
             LOG.error("Error loading library", ve);
             throw new IOException(ve);
         }
