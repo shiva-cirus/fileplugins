@@ -182,6 +182,7 @@
             <artifactId>guava</artifactId>
             <version>28.1-jre</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>com.voltage</groupId>
             <artifactId>example-app</artifactId>
@@ -190,6 +191,12 @@
             <systemPath>${basedir}/lib/vibesimplejava.jar</systemPath>
             <type>jar</type>
             <optional>true</optional>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>com.voltage</groupId>
+            <artifactId>vibesimplejava</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 
@@ -203,6 +210,26 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>2.5</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <groupId>com.voltage</groupId>
+                            <artifactId>example-app</artifactId>
+                            <version>1.0</version>
+                            <packaging>jar</packaging>
+                            <file>${basedir}/lib/vibesimplejava.jar</file>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -119,7 +119,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             while (keys.hasMoreElements()) {
                 String key = (String)keys.nextElement();
                 String value = (String)p.get(key);
-                System.out.println(key + " : " + value);
+                LOG.info(key + " : " + value);
             }
 
 
