@@ -131,7 +131,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
 
             // Load the JNI library
-           // System.loadLibrary("vibesimplejava");
+           System.loadLibrary("vibesimplejava");
 
             // Print the API version
             LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
