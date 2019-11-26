@@ -46,6 +46,14 @@
           "widget-attributes": {
             "default": "yyyy-MM-dd-HH-mm"
           }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Proxy connection",
+          "name": "proxy",
+          "widget-attributes" : {
+            "placeholder": "host:port"
+          }
         }
       ]
     },
@@ -58,14 +66,6 @@
           "name": "serviceFilePath",
           "widget-attributes": {
             "default": "auto-detect"
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Proxy connection",
-          "name": "proxy",
-          "widget-attributes" : {
-            "placeholder": "host:port"
           }
         }
       ]
