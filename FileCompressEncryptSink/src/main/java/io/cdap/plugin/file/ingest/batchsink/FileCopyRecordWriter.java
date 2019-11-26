@@ -16,15 +16,21 @@
 
 package io.cdap.plugin.file.ingest.batchsink;
 
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.auth.Credentials;
+import com.google.auth.http.HttpTransportFactory;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.TransportOptions;
 import com.google.cloud.WriteChannel;
+import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.*;
 import io.cdap.plugin.file.ingest.common.FileListData;
 import io.cdap.plugin.file.ingest.encryption.FileCompressEncrypt;
 import io.cdap.plugin.file.ingest.encryption.PGPCertUtil;
 import io.cdap.plugin.file.ingest.utils.FileMetaData;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.NullWritable;
@@ -38,6 +44,8 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 
@@ -64,10 +72,13 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
     private final String destpath;
     private final String suffix;
     private final String gcsserviceaccountjson;
+    private final String proxy;
     private Integer bufferSize;
     private PGPPublicKey encKey = null;
     private Storage storage = null;
     private Bucket bucket = null;
+    private String proxyHost;
+    private int proxyPort;
 
     /**
      * Construct a RecordWriter given user configurations.
@@ -120,6 +131,9 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
         LOG.info("Buffer size applied - " + bufferSize);
 
+        proxy = conf.get(FileCopyOutputFormat.NAME_PROXY, null);
+        LOG.info("Proxy - " + proxy);
+
         if (encryption) {
             //Read the Public Key to Encrypt Data
             try {
@@ -132,7 +146,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
 
         // Create GCS Storage using the credentials
-        storage = getGoogleStorage(gcsserviceaccountjson, project);
+        storage = getGoogleStorage(gcsserviceaccountjson, project, proxy);
         LOG.info("Created GCS Storage");
         bucket = getBucket(storage, bucketname);
         LOG.info("Created GCS Bucket");
@@ -142,7 +156,20 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         return new FileMetaData(uri + '/' + filePath, conf);
     }
 
-    private Storage getGoogleStorage(String serviceAccountJSON, String project) {
+    private void extractHostAndPortFromProxy() {
+        if (StringUtils.isNotEmpty(proxy)) {
+            String[] proxyComponents = StringUtils.splitByWholeSeparatorPreserveAllTokens(proxy, ":");
+            if (proxyComponents.length > 0) {
+                proxyHost = proxyComponents[0];
+            }
+
+            if (proxyComponents.length > 1) {
+                proxyPort = NumberUtils.toInt(proxyComponents[1], 0);
+            }
+        }
+    }
+
+    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxy) {
         Credentials credentials = null;
         try {
             credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON));
@@ -150,13 +177,29 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
             LOG.error(e.getMessage(), e);
         }
 
-        Storage storage = StorageOptions.newBuilder()
+        StorageOptions.Builder builder = StorageOptions.newBuilder()
                 .setCredentials(credentials)
-                .setProjectId(project)
-                .build()
-                .getService();
+                .setProjectId(project);
 
-        return storage;
+        if (StringUtils.isNotEmpty(proxy)) {
+            extractHostAndPortFromProxy();
+
+            LOG.info("Proxy Host - " + proxyHost);
+            LOG.info("Proxy Port - " + proxyPort);
+
+            HttpTransportFactory transportFactory = new HttpTransportFactory() {
+
+                @Override
+                public HttpTransport create() {
+                    return new NetHttpTransport.Builder().setProxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort))).build();
+                }
+            };
+
+            TransportOptions transportOptions = HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build();
+            builder.setTransportOptions(transportOptions);
+        }
+
+        return builder.build().getService();
     }
 
     private Bucket getBucket(Storage storage, String bucketname) {

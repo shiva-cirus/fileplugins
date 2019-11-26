@@ -59,6 +59,14 @@
           "widget-attributes": {
             "default": "auto-detect"
           }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Proxy connection",
+          "name": "proxy",
+          "widget-attributes" : {
+            "placeholder": "host:port"
+          }
         }
       ]
     },

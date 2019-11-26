@@ -27,6 +27,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     public static final String AUTO_DETECT = "auto-detect";
     public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
     public static final String NAME_BUFFER_SIZE = "bufferSize";
+    public static final String NAME_PROXY = "proxy";
     public static final String SCHEME = "gs://";
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSinkConfig.class);
@@ -78,7 +79,17 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Macro
     protected String bufferSize;
 
-    public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path, @Nullable String suffix, String project, String serviceFilePath, @Nullable String publicKeyPath, String bufferSize) {
+    @Name(NAME_PROXY)
+    @Description("The proxy to be used. If none specified it will make a direct connection or through " +
+            "the proxy set at the environment level.")
+    @Nullable
+    @Macro
+    private String proxy;
+
+    public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path,
+                                                 @Nullable String suffix, String project, String serviceFilePath,
+                                                 @Nullable String publicKeyPath, String bufferSize,
+                                                 @Nullable String proxy) {
         this.compression = compression;
         this.encryption = encryption;
         this.path = path;
@@ -87,6 +98,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
         this.serviceFilePath = serviceFilePath;
         this.publicKeyPath = publicKeyPath;
         this.bufferSize = bufferSize;
+        this.proxy = proxy;
     }
 
     public String getDestPath() {
@@ -199,6 +211,11 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
     public String getBufferSize() {
         return bufferSize;
+    }
+
+    @Nullable
+    public String getProxy() {
+        return proxy;
     }
 
     private enum CompressorType {

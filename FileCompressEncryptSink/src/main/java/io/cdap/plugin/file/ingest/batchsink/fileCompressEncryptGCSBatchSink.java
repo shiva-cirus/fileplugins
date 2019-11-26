@@ -63,6 +63,16 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
         if (!NumberUtils.isCreatable(config.getBufferSize())) {
             throw new IllegalArgumentException(String.format("Buffer size must be a numeric value for %s plugin. Please provide the same.", NAME));
         }
+        if (StringUtils.isNotEmpty(config.getProxy())) {
+            String[] proxyComponents = StringUtils.splitByWholeSeparatorPreserveAllTokens(config.getProxy(), ":");
+            if (proxyComponents.length != 2) {
+                throw new IllegalArgumentException(String.format("Invalid proxy value for %s plugin. It must be in \"host:port\" format. Please provide the same.", NAME));
+            }
+            int port = NumberUtils.toInt(proxyComponents[1], 0);
+            if (port == 0) {
+                throw new IllegalArgumentException(String.format("Invalid proxy port value for %s plugin. Please correct the same.", NAME));
+            }
+        }
     }
 
     // onRunFinish is called at the end of the pipeline run by the client that submitted the batch job.
@@ -109,6 +119,7 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
             FileCopyOutputFormat.setGCSProjectID(conf, config.getProject());
             FileCopyOutputFormat.setGCSServiceAccount(conf, config.getServiceAccountFilePath());
             FileCopyOutputFormat.setBufferSize(conf, config.getBufferSize());
+            FileCopyOutputFormat.setProxy(conf, config.getProxy());
         }
 
         @Override
