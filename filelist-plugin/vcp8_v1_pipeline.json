@@ -1,0 +1,139 @@
+{
+  "name": "vcp8_v1_pipeline",
+  "description": "Data Pipeline Application",
+  "artifact": {
+    "name": "cdap-data-pipeline",
+    "version": "6.0.0",
+    "scope": "SYSTEM"
+  },
+  "config": {
+    "resources": {
+      "memoryMB": 1024,
+      "virtualCores": 1
+    },
+    "driverResources": {
+      "memoryMB": 1024,
+      "virtualCores": 1
+    },
+    "connections": [
+      {
+        "from": "File List Capturer",
+        "to": "Wrangler"
+      },
+      {
+        "from": "Wrangler",
+        "to": "pkg_bigquery"
+      }
+    ],
+    "comments": [],
+    "postActions": [],
+    "properties": {},
+    "processTimingEnabled": true,
+    "stageLoggingEnabled": true,
+    "stages": [
+      {
+        "name": "File List Capturer",
+        "plugin": {
+          "name": "FileListSource",
+          "type": "batchsource",
+          "label": "File List Capturer",
+          "artifact": {
+            "name": "FileListSource",
+            "version": "1.1.0-SNAPSHOT",
+            "scope": "USER"
+          },
+          "properties": {
+            "scheme": "file",
+            "decrypt": "true",
+            "decompress": "false",
+            "recursiveCopy": "true",
+            "sourcePaths": "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/filelist-plugin/enc/",
+            "referenceName": "input",
+            "password": "passphrase",
+            "privateKeyFilePath": "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/filelist-plugin/PGP1D0.skr",
+            "maxSplitSize": "1"
+          }
+        },
+        "outputSchema": [
+          {
+            "name": "etlSchemaBody",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+          }
+        ]
+      },
+      {
+        "name": "Wrangler",
+        "plugin": {
+          "name": "Wrangler",
+          "type": "transform",
+          "label": "Wrangler",
+          "artifact": {
+            "name": "wrangler-transform",
+            "version": "4.0.0",
+            "scope": "SYSTEM"
+          },
+          "properties": {
+            "workspaceId": "4d2e1e39-feae-4481-a7c6-83e9a7913545",
+            "directives": "parse-as-csv :body ',' false\nrename body_1 body1\nrename body_2 body2\ndrop body",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body1\",\"type\":\"string\"},{\"name\":\"body2\",\"type\":\"string\"}]}",
+            "field": "body",
+            "precondition": "false",
+            "threshold": "1"
+          }
+        },
+        "outputSchema": [
+          {
+            "name": "etlSchemaBody",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body1\",\"type\":\"string\"},{\"name\":\"body2\",\"type\":\"string\"}]}"
+          }
+        ],
+        "inputSchema": [
+          {
+            "name": "File List Capturer",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+          }
+        ]
+      },
+      {
+        "name": "pkg_bigquery",
+        "plugin": {
+          "name": "BigQueryTable",
+          "type": "batchsink",
+          "label": "pkg_bigquery",
+          "artifact": {
+            "name": "google-cloud",
+            "version": "0.12.2",
+            "scope": "SYSTEM"
+          },
+          "properties": {
+            "project": "midyear-courage-256620",
+            "allowSchemaRelaxation": "true",
+            "serviceFilePath": "/Users/aca/Desktop/Pawan/cdap/midyear-courage-256620-0b0bc77ed7d8.json",
+            "referenceName": "output",
+            "dataset": "pawan",
+            "table": "city",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body1\",\"type\":\"string\"},{\"name\":\"body2\",\"type\":\"string\"}]}",
+            "bucket": "gs://pkg_big_query_test"
+          }
+        },
+        "outputSchema": [
+          {
+            "name": "etlSchemaBody",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body1\",\"type\":\"string\"},{\"name\":\"body2\",\"type\":\"string\"}]}"
+          }
+        ],
+        "inputSchema": [
+          {
+            "name": "Wrangler",
+            "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body1\",\"type\":\"string\"},{\"name\":\"body2\",\"type\":\"string\"}]}"
+          }
+        ]
+      }
+    ],
+    "schedule": "0 * * * *",
+    "engine": "mapreduce",
+    "numOfRecordsPreview": 100,
+    "description": "Data Pipeline Application",
+    "maxConcurrentRuns": 1
+  }
+}
