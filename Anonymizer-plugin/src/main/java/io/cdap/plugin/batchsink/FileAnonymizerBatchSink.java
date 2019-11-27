@@ -49,10 +49,8 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
         LOG.info("In prepareRun");
         context.addOutput(Output.of("FileCopyOutputFormatProvider", new FileCopyOutputFormatProvider(config)));
 
+        //validation for suffix
         /*
-        if (config.encryptFile() && StringUtils.isEmpty(config.getPublicKeyPath())) {
-            throw new IllegalArgumentException(String.format("Encryption enabled and PGP Public Key path is missing for %s plugin. Please provide the same.", NAME));
-        }
         if (StringUtils.isNotEmpty(config.getSuffix())) {
             try {
                 DateTimeFormatter.ofPattern(config.getSuffix());
@@ -60,10 +58,17 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
                 throw new IllegalArgumentException(String.format("Suffix has a invalid date format for %s plugin. Please correct the same.", NAME));
             }
         }
+        */
+
+        //validation for bufferSize
+        /*
         if (!NumberUtils.isCreatable(config.getBufferSize())) {
             throw new IllegalArgumentException(String.format("Buffer size must be a numeric value for %s plugin. Please provide the same.", NAME));
         }
         */
+
+        //TODO: add validations for fieldList
+
         LOG.info("prepareRun completed");
     }
 

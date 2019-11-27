@@ -22,4 +22,9 @@ public class FieldInfo {
     public String getFormat() {
         return format;
     }
+
+    @Override
+    public String toString() {
+        return String.format("n=%s|a=%s|f=%s", name,anonymize,format);
+    }
 }
