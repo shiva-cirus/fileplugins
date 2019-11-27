@@ -18,27 +18,32 @@ package io.cdap.plugin.batchsink;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.*;
 import com.voltage.securedata.enterprise.FPE;
 import com.voltage.securedata.enterprise.LibraryContext;
 import com.voltage.securedata.enterprise.VeException;
+import io.cdap.plugin.batchsink.common.FieldInfo;
 import io.cdap.plugin.batchsink.common.FileListData;
 import io.cdap.plugin.batchsink.utils.FileMetaData;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Properties;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The record writer that takes file metadata and streams data from source database
@@ -55,8 +60,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
     }
 
-    //private final boolean compression;
-    //private final boolean encryption;
     private final String bucketName;
     private final String project;
     private final String destinationPath;
@@ -70,8 +73,11 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     private String sharedSecret;
     private String trustStorePath;
     private String cachePath;
+    private String format;
+    private String fieldList;
+    private List<FieldInfo> fields;
 
-    FPE fpe     = null;
+    FPE fpe = null;
 
     /**
      * Construct a RecordWriter given user configurations.
@@ -105,6 +111,14 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         }
         LOG.info("Buffer size applied - " + bufferSize);
 
+        format = conf.get(FileAnonymizedOutputFormat.NAME_FILE_FORMAT, null);
+        LOG.info("Format - " + format);
+
+        fieldList = conf.get(FileAnonymizedOutputFormat.NAME_FIELD_LIST, null);
+        LOG.info("Field List - " + fieldList);
+
+        parseFields(fieldList);
+
         // Create GCS Storage using the credentials
         storage = getGoogleStorage(gcsServiceAccountJson, project);
         LOG.info("Created GCS Storage");
@@ -113,25 +127,25 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
         try {
             LOG.info("In initialize");
+            System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib");
+            /*
             LOG.info("Print all default System Properties as seen by Plugin");
             Properties p = System.getProperties();
             Enumeration keys = p.keys();
             while (keys.hasMoreElements()) {
-                String key = (String)keys.nextElement();
-                String value = (String)p.get(key);
+                String key = (String) keys.nextElement();
+                String value = (String) p.get(key);
                 LOG.info(key + " : " + value);
             }
+            */
 
-
-            LOG.info("java.library.path", "/opt/DA/javasimpleapi/lib" );
-            Field fieldSysPath = ClassLoader.class.getDeclaredField( "sys_paths" );
-            fieldSysPath.setAccessible( true );
-            fieldSysPath.set( null, null );
-
-
+            LOG.info("java.library.path = {}", "/opt/DA/javasimpleapi/lib");
+            Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
+            fieldSysPath.setAccessible(true);
+            fieldSysPath.set(null, null);
 
             // Load the JNI library
-           System.loadLibrary("vibesimplejava");
+            System.loadLibrary("vibesimplejava");
 
             // Print the API version
             LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
@@ -152,15 +166,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             gs://shiva-cirus-test/disttest/
 
             /opt/cdap-test-data/midyear-courage-256620-0b0bc77ed7d8.json
-
-            String policyURL      = "https://"
-                    + "voltage-pp-0000.dataprotection.voltage.com"
-                    + "/policy/clientPolicy.xml";
-            String identity       = "accounts22@dataprotection.voltage.com";
-            String sharedSecret   = "voltage123";
-            String format         = "SSN";
-            String trustStorePath = "../trustStore";
-            String cachePath      = "../cache";
             */
 
             policyUrl = conf.get(FileAnonymizedOutputFormat.NAME_POLICY_URL, null);
@@ -199,9 +204,20 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     .setSharedSecret(sharedSecret)
                     .setIdentity(identity)
                     .build();
-        }catch (VeException | NoSuchFieldException | IllegalAccessException ve) {
+        } catch (VeException | NoSuchFieldException | IllegalAccessException ve) {
             LOG.error("Error loading library", ve);
             throw new IOException(ve);
+        }
+    }
+
+    private void parseFields(String fieldList) {
+        fields = new ArrayList<>();
+
+        String[] list = StringUtils.splitPreserveAllTokens(fieldList, ",");
+        for (String entry : list) {
+            String[] attributes = StringUtils.splitPreserveAllTokens(entry, ":", 3);
+            FieldInfo field = new FieldInfo(attributes[0], attributes[1].equalsIgnoreCase("Yes"), attributes[2]);
+            fields.add(field);
         }
     }
 
@@ -246,24 +262,15 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
      */
     @Override
     public void write(NullWritable key, FileListData fileListData) throws IOException, InterruptedException {
+        LOG.info("In write");
         if (fileListData.getRelativePath().isEmpty()) {
+            LOG.info("fileListData.getRelativePath() is empty");
             return;
         }
 
         // construct file paths for source and destination
         String outFileName = destinationPath + fileListData.getRelativePath();
-        String contentType = "application/octet-stream";
-        /*
-        if (compression) {
-            outFileName += ".zip";
-            contentType = "application/zip";
-        }
-
-        if (encryption) {
-            outFileName += ".pgp";
-            contentType = "application/pgp-encrypted";
-        }
-        */
+        String contentType = "text/csv";
 
         FileMetaData fileMetaData = null;
         String fullPath = fileListData.getFullPath();
@@ -277,6 +284,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
         LOG.info("Output File Name " + outFileName);
 
+        /*
         try {
             String plaintext = "123-45-6789";
 
@@ -288,58 +296,110 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         } catch (VeException ve) {
             LOG.error("Error while anonymizing.", ve);
         }
+        */
 
-        /*
         BlobId blobId = BlobId.of(bucket.getName(), outFileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
 
-        InputStream inputStream = null;
-
-        try {
-            inputStream = FileCompressEncrypt.gcsWriter(fileMetaData, compression, encryption, encKey, bufferSize);
+        try (InputStream inputStream = getAnonymizedStream(fileMetaData)) {
             byte[] buffer = new byte[bufferSize];
-            try (WriteChannel writer =
-                         storage.writer(blobInfo)) {
+            try (WriteChannel writer = storage.writer(blobInfo)) {
                 int limit;
                 while ((limit = inputStream.read(buffer)) >= 0) {
                     LOG.debug("upload file " + limit);
                     writer.write(ByteBuffer.wrap(buffer, 0, limit));
                 }
             }
-        } catch (IOException e) {
-            LOG.error(e.getMessage(), e);
+        } catch (IOException ie) {
+            LOG.error(ie.getMessage(), ie);
         }
+
+        LOG.info("write completed");
+    }
+
+    private void buildAnonymizedContents(OutputStream outPipe, FileMetaData fileMetaData) throws IOException {
+        try (
+                FSDataInputStream in = fileMetaData.getFileSystem().open(fileMetaData.getPath());
+                InputStreamReader reader = new InputStreamReader(in);
+                CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT);
+        ) {
+            List<CSVRecord> records = csvParser.getRecords();
+            if (records.isEmpty()) {
+                throw new IOException(String.format("The input file '%s' is empty", fileMetaData.getPath().getName()));
+            }
+
+            //CSVPrinter printer = new CSVPrinter(new StringWriter(), CSVFormat.DEFAULT);
+            CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(outPipe), CSVFormat.DEFAULT);
+
+            List<Object> fieldValues = new ArrayList<>();
+            for (CSVRecord csvRecord : csvParser.getRecords()) {
+                if (csvRecord.size() < fields.size()) {
+                    printer.close();
+                    throw new IOException(String.format("Invalid number of columns at line %d in '%s' file", csvRecord.getRecordNumber(), fileMetaData.getPath().getName()));
+                }
+                fieldValues.clear();
+                for (int columnIndex = 0; columnIndex < csvRecord.size(); columnIndex++) {
+                    if (fields.get(columnIndex).isAnonymize()) {
+                        String plainText = csvRecord.get(columnIndex);
+                        String cipherText = anonymize(plainText);
+                        if (cipherText == null) {
+                            printer.close();
+                            throw new IOException(String.format("Unable anonymize '%s' value for column '%s' at line %d in '%s' file.",
+                                    plainText, fields.get(columnIndex).getName(), csvRecord.getRecordNumber(), fileMetaData.getPath().getName()));
+                        }
+                        fieldValues.add(cipherText);
+                    } else {
+                        fieldValues.add(csvRecord.get(columnIndex));
+                    }
+                }
+                printer.printRecord(fieldValues);
+            }
+
+            printer.close();
+        }
+
+    }
+
+    private String anonymize(String plainText) {
+        String cipherText = null;
         try {
-            inputStream.close();
-        } catch (IOException e) {
-            LOG.error(e.getMessage(), e);
+            LOG.info("Anonymizing {}...", plainText);
+            // Dev Guide Code Snippet: FPEPROTECT; LC:1
+            cipherText = fpe.protect(plainText);
+
+            LOG.info("Anonymizing {} = {}...", plainText, cipherText);
+        } catch (VeException ve) {
+            LOG.error("Error while anonymizing.", ve);
         }
-        */
+
+        return cipherText;
+    }
+
+    private InputStream getAnonymizedStream(FileMetaData fileMetaData) throws IOException {
+        PipedOutputStream outPipe = new PipedOutputStream();
+        PipedInputStream inPipe = new PipedInputStream();
+        inPipe.connect(outPipe);
+
+        new Thread(
+                () -> {
+                    try {
+                        buildAnonymizedContents(outPipe, fileMetaData);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            outPipe.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                })
+                .start();
+
+        return inPipe;
     }
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-        // attempts to close the other even if one fails
-        // try {
-        //   destFileSystem.close();
-        // } finally {
-        //  safelyCloseSourceFilesystems(sourceFilesystemMap.values().iterator());
-        // }
-    }
-
-    /**
-     * this method attempts to close every Filesystem object in the list, logs a warning
-     * for each object that fails to close
-     *
-     * @param fs The iterator over all the Filesystems we wish to close.
-     */
-    private void safelyCloseSourceFilesystems(Iterator<FileSystem> fs) {
-        while (fs.hasNext()) {
-            try {
-                fs.next().close();
-            } catch (IOException e) {
-                LOG.warn(e.getMessage());
-            }
-        }
     }
 }

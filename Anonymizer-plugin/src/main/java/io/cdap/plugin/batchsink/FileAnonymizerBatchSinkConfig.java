@@ -82,25 +82,26 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
     @Description("Specify the file format")
     private String format;
 
-    @Name("property_ds_multiplevalues")
-    @Description("Specify the field and property_ds_multiplevalues type combination. " +
-            "Format is <field>:<encode-type>[,<field>:<encode-type>]*")
-    private String property_ds_multiplevalues;
+    @Name("fieldList")
+    @Description("Specify the field, anonymization flag and anonymization format combination. " +
+            "Format is <field>:<anonymize-flag>:<anonymize-format>[,<field>:<anonymize-flag>:<anonymize-format>]*")
+    private String fieldList;
 
     public FileAnonymizerBatchSinkConfig(String path, @Nullable String suffix, String project, String serviceFilePath,
                                          String bufferSize, String policyUrl, String identity, String sharedSecret,
-                                         String trustStorePath, String cachePath, String format) {
+                                         String trustStorePath, String cachePath, String format, String fieldList) {
         this.path = path;
         this.suffix = suffix;
         this.project = project;
         this.serviceFilePath = serviceFilePath;
         this.bufferSize = bufferSize;
-        this.policyUrl=policyUrl;
-        this.identity=identity;
-        this.sharedSecret=sharedSecret;
-        this.trustStorePath=trustStorePath;
-        this.cachePath=cachePath;
-        this.format=format;
+        this.policyUrl = policyUrl;
+        this.identity = identity;
+        this.sharedSecret = sharedSecret;
+        this.trustStorePath = trustStorePath;
+        this.cachePath = cachePath;
+        this.format = format;
+        this.fieldList = fieldList;
     }
 
     @Nullable
@@ -153,6 +154,10 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
 
     public String getFormat() {
         return format;
+    }
+
+    public String getFieldList() {
+        return fieldList;
     }
 
     public String getDestinationPath() {

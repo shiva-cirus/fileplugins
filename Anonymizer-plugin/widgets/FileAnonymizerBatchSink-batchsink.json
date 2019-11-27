@@ -49,7 +49,7 @@
           }
         },
         {
-          "name": "property_ds_multiplevalues",
+          "name": "fieldList",
           "label": "Anonymize multiplevalues",
           "widget-type": "ds-multiplevalues",
           "widget-attributes": {

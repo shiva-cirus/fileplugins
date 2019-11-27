@@ -39,6 +39,8 @@ public class FileAnonymizedOutputFormat extends OutputFormat {
     public static final String NAME_SHARED_SECRET = "shared.secret";
     public static final String NAME_TRUST_STORE_PATH = "trust.store.path";
     public static final String NAME_CACHE_PATH = "cache.path";
+    public static final String NAME_FILE_FORMAT = "file.format";
+    public static final String NAME_FIELD_LIST = "field.list";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileAnonymizedOutputFormat.class);
 
@@ -84,6 +86,14 @@ public class FileAnonymizedOutputFormat extends OutputFormat {
 
     public static void setCachePath(Map<String, String> conf, String value) {
         conf.put(NAME_CACHE_PATH, value);
+    }
+
+    public static void setFormat(Map<String, String> conf, String value) {
+        conf.put(NAME_FILE_FORMAT, value);
+    }
+
+    public static void setFieldList(Map<String, String> conf, String value) {
+        conf.put(NAME_FIELD_LIST, value == null ? "" : value);
     }
 
     @Override

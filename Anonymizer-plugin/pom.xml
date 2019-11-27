@@ -182,6 +182,11 @@
             <artifactId>guava</artifactId>
             <version>28.1-jre</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${apache-commons.version}</version>
+        </dependency>
         <!--
         <dependency>
             <groupId>com.voltage</groupId>
