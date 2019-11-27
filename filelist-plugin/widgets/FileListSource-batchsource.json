@@ -31,6 +31,16 @@
         },
         {
           "widget-type": "textbox",
+          "label": "Private key File Path",
+          "name": "privateKeyFilePath"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Private key Password",
+          "name": "password"
+        },
+        {
+          "widget-type": "textbox",
           "label": "Max Split Size",
           "name": "maxSplitSize"
         },

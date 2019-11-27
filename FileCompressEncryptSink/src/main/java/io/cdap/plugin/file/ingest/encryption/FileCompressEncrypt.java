@@ -385,20 +385,9 @@ public class FileCompressEncrypt {
             String[] args)
             throws Exception {
         Security.addProvider(new BouncyCastleProvider());
-        FileCompressEncrypt googleCloudStorage =
-                new FileCompressEncrypt("rugged-alloy-254904-08590d697da8.json", "rugged-alloy-254904");
-
-        //encOnLocalFileSys("input/pkg2_vikas.csv", "output/pkg2_vikas.csv.asc");
-
-        String inFilePath = "input/pkg1_vikas.csv";
-        String inFileName = "pkg1_vikas.csv";
-        String bucketName = "cdap_vikas";
-        String uploadFileName = "pkg1_vikas.csv.asc";
-
-        encryptionCompressAndUploadGCSWithThread(inFilePath, inFileName, bucketName, uploadFileName);
 
 
-        decryption("/Users/vikaskumar/Downloads/pkg1_vikas.csv.asc");
+        decryption("/Users/aca/Desktop/Pawan/cdap/data/vcp8/enc_compress/_2019-11-27-12-30_domain_master.csv.zip.pgp");
         //decryption("output/pkg2_vikas.csv.asc");
 
     }
