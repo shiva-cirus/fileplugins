@@ -38,6 +38,8 @@ public class FileCopyOutputFormat extends OutputFormat {
     public static final String NAME_PGP_PUBKEY = "file.pgp.pub.key";
     public static final String NAME_BUFFER_SIZE = "buffer.size";
     public static final String NAME_PROXY = "proxy";
+    public static final String NAME_PROXY_TYPE = "proxytype";
+
 
     public static final String FS_SCHEME = "filesystem.scheme";
 
@@ -82,6 +84,13 @@ public class FileCopyOutputFormat extends OutputFormat {
     public static void setProxy(Map<String, String> conf, String value) {
         conf.put(NAME_PROXY, value == null ? "" : value);
     }
+
+
+    public static void setProxyType(Map<String, String> conf, String value) {
+        conf.put(NAME_PROXY_TYPE, value == null ? "" : value);
+    }
+
+
 
     @Override
     public void checkOutputSpecs(JobContext jobContext) throws IOException, InterruptedException {

@@ -63,6 +63,12 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
         if (!NumberUtils.isCreatable(config.getBufferSize())) {
             throw new IllegalArgumentException(String.format("Buffer size must be a numeric value for %s plugin. Please provide the same.", NAME));
         }
+
+        if (config.useProxy() && StringUtils.isEmpty(config.getProxy())) {
+            throw new IllegalArgumentException(String.format("Proxy host and port is required.", NAME));
+        }
+
+
         if (StringUtils.isNotEmpty(config.getProxy())) {
             String[] proxyComponents = StringUtils.splitByWholeSeparatorPreserveAllTokens(config.getProxy(), ":");
             if (proxyComponents.length != 2) {
@@ -120,6 +126,7 @@ public class fileCompressEncryptGCSBatchSink extends BatchSink<StructuredRecord,
             FileCopyOutputFormat.setGCSServiceAccount(conf, config.getServiceAccountFilePath());
             FileCopyOutputFormat.setBufferSize(conf, config.getBufferSize());
             FileCopyOutputFormat.setProxy(conf, config.getProxy());
+            FileCopyOutputFormat.setProxyType(conf, config.getProxyType());
         }
 
         @Override

@@ -28,6 +28,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     public static final String NAME_ENCRYPTION_PUBLIC_KEY_FILE_PATH = "publicKeyPath";
     public static final String NAME_BUFFER_SIZE = "bufferSize";
     public static final String NAME_PROXY = "proxy";
+    public static final String NAME_PROXY_TYPE = "proxytype";
     public static final String SCHEME = "gs://";
 
     private static final Logger LOG = LoggerFactory.getLogger(fileCompressEncryptGCSBatchSinkConfig.class);
@@ -86,10 +87,17 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     @Macro
     private String proxy;
 
+    @Name(NAME_PROXY_TYPE)
+    @Description("Specify the Proxy Type. None - No Proxy , HTTP - Proxy for HTTP , SOCK - Low level Proxy")
+    protected String proxytype = ProxyType.NONE.getType();
+
+
+
+
     public fileCompressEncryptGCSBatchSinkConfig(String compression, String encryption, String path,
                                                  @Nullable String suffix, String project, String serviceFilePath,
                                                  @Nullable String publicKeyPath, String bufferSize,
-                                                 @Nullable String proxy) {
+                                                 @Nullable String proxy, String proxytype) {
         this.compression = compression;
         this.encryption = encryption;
         this.path = path;
@@ -99,6 +107,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
         this.publicKeyPath = publicKeyPath;
         this.bufferSize = bufferSize;
         this.proxy = proxy;
+        this.proxytype=proxytype;
     }
 
     public String getDestPath() {
@@ -144,6 +153,13 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
 
     public boolean encryptFile() {
         if (Strings.isNullOrEmpty(encryption) || encryption.equals(EncryptionType.NONE.getType()))
+            return false;
+
+        return true;
+    }
+
+    public boolean useProxy() {
+        if (Strings.isNullOrEmpty(proxytype) || encryption.equals(ProxyType.NONE.getType()))
             return false;
 
         return true;
@@ -196,6 +212,8 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
         return encryption;
     }
 
+
+
     public String getPath() {
         return path;
     }
@@ -217,6 +235,12 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     public String getProxy() {
         return proxy;
     }
+
+
+    public String getProxyType() {
+        return proxytype;
+    }
+
 
     private enum CompressorType {
         ZIP("ZIP"),
@@ -245,4 +269,21 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
             return type;
         }
     }
+
+    private enum ProxyType {
+        HTTP("HTTP"),
+        SOCKS("SOCKS"),
+        NONE("NONE");
+        private String type;
+
+        ProxyType(String type) {
+            this.type = type;
+        }
+
+        String getType() {
+            return type;
+        }
+    }
+
+
 }

@@ -48,6 +48,19 @@
           }
         },
         {
+          "widget-type": "select",
+          "label": "Proxy Type",
+          "name": "proxytype",
+          "widget-attributes": {
+            "values": [
+              "SOCKS",
+              "HTTP",
+              "NONE"
+            ],
+            "default": "NONE"
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Proxy connection",
           "name": "proxy",

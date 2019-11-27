@@ -79,6 +79,8 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
     private Bucket bucket = null;
     private String proxyHost;
     private int proxyPort;
+    private String proxytype;
+    private final boolean useProxy;
 
     /**
      * Construct a RecordWriter given user configurations.
@@ -134,6 +136,19 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         proxy = conf.get(FileCopyOutputFormat.NAME_PROXY, null);
         LOG.info("Proxy - " + proxy);
 
+        if (conf.get(FileCopyOutputFormat.NAME_PROXY_TYPE).equals("NONE")) {
+            useProxy = false;
+            LOG.info("Proxy is not set");
+        } else {
+            useProxy = true;
+            LOG.info("Using Proxy.");
+        }
+
+
+        proxytype = conf.get(FileCopyOutputFormat.NAME_PROXY_TYPE, null);
+        LOG.info("Proxy Type - " + proxytype);
+
+
         if (encryption) {
             //Read the Public Key to Encrypt Data
             try {
@@ -146,7 +161,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
 
         // Create GCS Storage using the credentials
-        storage = getGoogleStorage(gcsserviceaccountjson, project, proxy);
+        storage = getGoogleStorage(gcsserviceaccountjson, project, proxy,proxytype,useProxy);
         LOG.info("Created GCS Storage");
         bucket = getBucket(storage, bucketname);
         LOG.info("Created GCS Bucket");
@@ -169,7 +184,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
     }
 
-    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxy) {
+    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxy, String proxytype, Boolean useProxy) {
         Credentials credentials = null;
         try {
             credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON));
@@ -181,17 +196,24 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
                 .setCredentials(credentials)
                 .setProjectId(project);
 
-        if (StringUtils.isNotEmpty(proxy)) {
+        if (useProxy) {
             extractHostAndPortFromProxy();
 
             LOG.info("Proxy Host - " + proxyHost);
             LOG.info("Proxy Port - " + proxyPort);
 
+
+
             HttpTransportFactory transportFactory = new HttpTransportFactory() {
 
                 @Override
                 public HttpTransport create() {
-                    return new NetHttpTransport.Builder().setProxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort))).build();
+
+                    if ("SOCKS".equals(proxytype)) {
+                        return new NetHttpTransport.Builder().setProxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort))).build();
+                    } else {
+                        return new NetHttpTransport.Builder().setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort))).build();
+                    }
                 }
             };
 
