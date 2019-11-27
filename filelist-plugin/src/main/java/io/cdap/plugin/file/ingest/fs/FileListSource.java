@@ -39,10 +39,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.bouncycastle.openpgp.PGPException;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
@@ -105,10 +102,23 @@ public class FileListSource extends AbstractFileListSource<FileListData> {
       KeyValue<NullWritable, FileListData> input, Emitter<StructuredRecord> emitter) {
     String filePath = input.getValue().getFullPath();
     String keyFileName = config.privateKeyFilePath;
-    String privateKeyPassword = config.password;//"passphrase";
+    char[] privateKeyPassword = config.password.toCharArray(); // "passphrase";
+    Boolean decrypt = config.decrypt;
+    Boolean decompress = config.decompress;
+    InputStream inputFileStream = null;
     try {
-      InputStream inputStream = FileUtil.decryptionAndDecompress(filePath, keyFileName, privateKeyPassword);
-      InputStreamReader isReader = new InputStreamReader(inputStream);
+      if (decrypt) {
+        if (decompress) {
+          inputFileStream =
+              FileUtil.decryptAndDecompress(filePath, keyFileName, privateKeyPassword);
+        } else {
+          inputFileStream = FileUtil.decrypt(filePath, keyFileName, privateKeyPassword);
+        }
+      } else {
+        inputFileStream = new FileInputStream(filePath);
+      }
+
+      InputStreamReader isReader = new InputStreamReader(inputFileStream);
       // Creating a BufferedReader object
       BufferedReader reader = new BufferedReader(isReader);
 
@@ -119,7 +129,7 @@ public class FileListSource extends AbstractFileListSource<FileListData> {
         emitter.emit(toRecord(line));
         line = reader.readLine();
       }
-      inputStream.close();
+      inputFileStream.close();
       isReader.close();
       reader.close();
 
@@ -149,18 +159,27 @@ public class FileListSource extends AbstractFileListSource<FileListData> {
 
     @Description("Scheme of the source filesystem.")
     public String scheme;
+
     @Description("Private key File Path.")
     public String privateKeyFilePath;
 
     @Description("Password of the private key")
     public String password;
 
+    @Description("File to be Decypted or not")
+    public Boolean decrypt;
+
+    @Description("File to be decompress or not")
+    public Boolean decompress;
+
     public FileMetadataSourceConfig(
         String name, String sourcePaths, Integer maxSplitSize, String scheme) {
       super(name, sourcePaths, maxSplitSize);
       this.scheme = scheme;
-      this.privateKeyFilePath=privateKeyFilePath;
-      this.password=password;
+      this.privateKeyFilePath = privateKeyFilePath;
+      this.password = password;
+      this.decrypt = decrypt;
+      this.decompress = decompress;
     }
   }
 }

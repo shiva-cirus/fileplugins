@@ -12,22 +12,14 @@ import java.security.Security;
 import java.util.Iterator;
 
 public class FileUtil {
-  public static InputStream decryptionAndDecompress(String inFile, String keyFileName, String privateKeyPassword)
-      throws IOException, NoSuchProviderException, PGPException {
-   return decryptFile(inFile, keyFileName, privateKeyPassword.toCharArray());
-  }
 
-  private static InputStream decryptFile(String inputFileName, String keyFileName, char[] passwd)
+  /** decrypt and decompress the passed in message stream */
+  public static InputStream decryptAndDecompress(
+      String inputFileName, String keyFileName, char[] privateKeyPassword)
       throws IOException, NoSuchProviderException, PGPException {
     InputStream in = new BufferedInputStream(new FileInputStream(inputFileName));
     InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
-    InputStream unCompressed= decryptFile(in, keyIn, passwd);
-    keyIn.close();
-    return unCompressed;
-  }
-  /** decrypt the passed in message stream */
-  private static InputStream decryptFile(InputStream in, InputStream keyIn, char[] passwd)
-      throws IOException, NoSuchProviderException, PGPException {
+
     in = PGPUtil.getDecoderStream(in);
 
     JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
@@ -56,7 +48,7 @@ public class FileUtil {
     while (sKey == null && it.hasNext()) {
       pbe = (PGPPublicKeyEncryptedData) it.next();
 
-      sKey = PGPCertUtil.findSecretKey(pgpSec, pbe.getKeyID(), passwd);
+      sKey = PGPCertUtil.findSecretKey(pgpSec, pbe.getKeyID(), privateKeyPassword);
     }
 
     if (sKey == null) {
@@ -68,7 +60,7 @@ public class FileUtil {
             new JcePublicKeyDataDecryptorFactoryBuilder()
                 .setProvider(new BouncyCastleProvider())
                 .build(sKey));
-
+    keyIn.close();
     JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
 
     PGPCompressedData cData = (PGPCompressedData) plainFact.nextObject();
@@ -88,32 +80,78 @@ public class FileUtil {
       throw new PGPException("message is not a simple encrypted file - type unknown.");
     }
   }
+  /** decrypt */
+  public static InputStream decrypt(
+      String inputFileName, String keyFileName, char[] privateKeyPassword)
+      throws IOException, NoSuchProviderException, PGPException {
+    InputStream in = new BufferedInputStream(new FileInputStream(inputFileName));
+    InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
+
+    in = PGPUtil.getDecoderStream(in);
+
+    JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
+    PGPEncryptedDataList enc;
+
+    Object o = pgpF.nextObject();
+    //
+    // the first object might be a PGP marker packet.
+    //
+    if (o instanceof PGPEncryptedDataList) {
+      enc = (PGPEncryptedDataList) o;
+    } else {
+      enc = (PGPEncryptedDataList) pgpF.nextObject();
+    }
+
+    //
+    // find the secret key
+    //
+    Iterator it = enc.getEncryptedDataObjects();
+    PGPPrivateKey sKey = null;
+    PGPPublicKeyEncryptedData pbe = null;
+    PGPSecretKeyRingCollection pgpSec =
+        new PGPSecretKeyRingCollection(
+            PGPUtil.getDecoderStream(keyIn), new JcaKeyFingerprintCalculator());
+
+    while (sKey == null && it.hasNext()) {
+      pbe = (PGPPublicKeyEncryptedData) it.next();
+
+      sKey = PGPCertUtil.findSecretKey(pgpSec, pbe.getKeyID(), privateKeyPassword);
+    }
+
+    if (sKey == null) {
+      throw new IllegalArgumentException("secret key for message not found.");
+    }
+    keyIn.close();
+    return pbe.getDataStream(
+        new JcePublicKeyDataDecryptorFactoryBuilder()
+            .setProvider(new BouncyCastleProvider())
+            .build(sKey));
+  }
 
   public static void main(String[] args) throws Exception {
     Security.addProvider(new BouncyCastleProvider());
     String filePath =
-        "/Users/aca/Desktop/Pawan/cdap/data/vcp8/enc_compress/_2019-11-27-12-30_domain_master.csv.zip.pgp";
+        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/filelist-plugin/enc/_2019-11-27-12-34_domain_master.csv.pgp";
     String keyFileName = "PGP1D0.skr";
     String privateKeyPassword = "passphrase";
-    InputStream inputStream=decryptionAndDecompress(filePath, keyFileName, privateKeyPassword);
-      try {
-          InputStreamReader isReader = new InputStreamReader(inputStream);
-          // Creating a BufferedReader object
-          BufferedReader reader = new BufferedReader(isReader);
+    InputStream inputStream = decrypt(filePath, keyFileName, privateKeyPassword.toCharArray());
+    try {
+      InputStreamReader isReader = new InputStreamReader(inputStream);
+      // Creating a BufferedReader object
+      BufferedReader reader = new BufferedReader(isReader);
 
-          String line = reader.readLine();
+      String line = reader.readLine();
 
-          while (line != null) {
-              // read next line
-              System.out.println(line);
-              line = reader.readLine();
-          }
-          inputStream.close();
-          isReader.close();
-          reader.close();
-      } catch (IOException e) {
-          e.printStackTrace();
+      while (line != null) {
+        // read next line
+        System.out.println(line);
+        line = reader.readLine();
       }
-
+      inputStream.close();
+      isReader.close();
+      reader.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }

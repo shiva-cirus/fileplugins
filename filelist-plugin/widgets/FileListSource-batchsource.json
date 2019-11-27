@@ -40,6 +40,30 @@
           "name": "password"
         },
         {
+          "widget-type": "select",
+          "label": "Decrypt File",
+          "name": "decrypt",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Decompress File",
+          "name": "decompress",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Max Split Size",
           "name": "maxSplitSize"
