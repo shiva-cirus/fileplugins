@@ -159,7 +159,7 @@ public class fileCompressEncryptGCSBatchSinkConfig extends PluginConfig {
     }
 
     public boolean useProxy() {
-        if (Strings.isNullOrEmpty(proxytype) || encryption.equals(ProxyType.NONE.getType()))
+        if (Strings.isNullOrEmpty(proxytype) || proxytype.equals(ProxyType.NONE.getType()))
             return false;
 
         return true;
