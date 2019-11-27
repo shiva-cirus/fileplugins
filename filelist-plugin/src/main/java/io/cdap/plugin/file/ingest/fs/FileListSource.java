@@ -37,6 +37,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +51,7 @@ import java.util.List;
 @Name("FileListSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
 public class FileListSource extends AbstractFileListSource<FileListData> {
+
   private FileMetadataSourceConfig config;
 
   public FileListSource(FileMetadataSourceConfig config) {
@@ -91,9 +95,37 @@ public class FileListSource extends AbstractFileListSource<FileListData> {
    */
   @Override
   public void transform(KeyValue<NullWritable, FileListData> input, Emitter<StructuredRecord> emitter) {
-    emitter.emit(input.getValue().toRecord());
-  }
+    String filePath=input.getValue().getFullPath();
+    BufferedReader reader;
+    try {
+      reader = new BufferedReader(new FileReader(
+              filePath));
+      String line = reader.readLine();
 
+      while (line != null) {
+        // read next line
+        emitter.emit(toRecord(line));
+        line = reader.readLine();
+      }
+      reader.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+  /** Converts to a StructuredRecord */
+  public StructuredRecord toRecord(String line) {
+
+    // merge default schema and credential schema to create output schema
+    Schema outputSchema;
+    List<Schema.Field> fieldList = new ArrayList<>(FileListData.DEFAULT_SCHEMA.getFields());
+    outputSchema = Schema.recordOf("metadata", fieldList);
+
+    StructuredRecord.Builder outputBuilder =
+            StructuredRecord.builder(outputSchema)
+                    .set(FileListData.BODY, line);
+
+    return outputBuilder.build();
+  }
   /**
    * Configurations required for connecting to local filesystems.
    */
