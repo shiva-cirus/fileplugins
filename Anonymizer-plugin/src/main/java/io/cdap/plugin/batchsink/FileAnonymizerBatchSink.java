@@ -13,10 +13,13 @@ import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.plugin.batchsink.common.FileListData;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,7 +53,6 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
         context.addOutput(Output.of("FileCopyOutputFormatProvider", new FileCopyOutputFormatProvider(config)));
 
         //validation for suffix
-        /*
         if (StringUtils.isNotEmpty(config.getSuffix())) {
             try {
                 DateTimeFormatter.ofPattern(config.getSuffix());
@@ -58,14 +60,11 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
                 throw new IllegalArgumentException(String.format("Suffix has a invalid date format for %s plugin. Please correct the same.", NAME));
             }
         }
-        */
 
         //validation for bufferSize
-        /*
         if (!NumberUtils.isCreatable(config.getBufferSize())) {
             throw new IllegalArgumentException(String.format("Buffer size must be a numeric value for %s plugin. Please provide the same.", NAME));
         }
-        */
 
         //TODO: add validations for fieldList
 
@@ -111,14 +110,9 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
         public FileCopyOutputFormatProvider(FileAnonymizerBatchSinkConfig config) {
             this.conf = new HashMap<>();
 
-            /*
-            FileCopyOutputFormat.setCompression(conf, config.getCompressor());
-            FileCopyOutputFormat.setEncryption(conf, config.getEncryption());
-            */
             FileAnonymizedOutputFormat.setGCSBucket(conf, config.getBucket());
             FileAnonymizedOutputFormat.setGCSDestPath(conf, config.getDestinationPath());
             FileAnonymizedOutputFormat.setGCSDestPathSuffix(conf, config.getSuffix());
-            //FileCopyOutputFormat.setPGPPubKey(conf, config.getPublicKeyPath());
             FileAnonymizedOutputFormat.setGCSProjectID(conf, config.getProject());
             FileAnonymizedOutputFormat.setGCSServiceAccount(conf, config.getServiceFilePath());
             FileAnonymizedOutputFormat.setBufferSize(conf, config.getBufferSize());
@@ -128,6 +122,7 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
             FileAnonymizedOutputFormat.setTrustStorePath(conf, config.getTrustStorePath());
             FileAnonymizedOutputFormat.setCachePath(conf, config.getCachePath());
             FileAnonymizedOutputFormat.setFormat(conf, config.getFormat());
+            FileAnonymizedOutputFormat.setIgnoreHeader(conf, config.getIgnoreHeader());
             FileAnonymizedOutputFormat.setFieldList(conf, config.getFieldList());
         }
 

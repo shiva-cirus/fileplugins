@@ -39,7 +39,7 @@
       "properties": [
         {
           "widget-type": "select",
-          "label": "Format",
+          "label": "File Format",
           "name": "format",
           "widget-attributes": {
             "values": [
@@ -49,8 +49,20 @@
           }
         },
         {
+          "widget-type": "select",
+          "label": "Ignore Header Row",
+          "name": "ignoreHeader",
+          "widget-attributes": {
+            "values": [
+              "Yes",
+              "No"
+            ],
+            "default": "No"
+          }
+        },
+        {
           "name": "fieldList",
-          "label": "Anonymize multiplevalues",
+          "label": "Anonymize Fields",
           "widget-type": "ds-multiplevalues",
           "widget-attributes": {
             "delimiter": ",",
@@ -59,7 +71,7 @@
             "placeholders": [
               "Input Field",
               "Anonymize (Yes/No)",
-              "Format"
+              "Anonymize Format (SSN/CC)"
             ]
           }
         }

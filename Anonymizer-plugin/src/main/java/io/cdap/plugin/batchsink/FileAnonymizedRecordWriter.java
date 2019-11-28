@@ -75,7 +75,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     private String sharedSecret;
     private String trustStorePath;
     private String cachePath;
-    private String format;
+    private String fileFormat;
+    private boolean ignoreHeader;
     private String fieldList;
     private List<FieldInfo> fields;
 
@@ -114,8 +115,12 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         }
         LOG.info("Buffer size applied - " + bufferSize);
 
-        format = conf.get(FileAnonymizedOutputFormat.NAME_FILE_FORMAT, null);
-        LOG.info("Format - " + format);
+        fileFormat = conf.get(FileAnonymizedOutputFormat.NAME_FILE_FORMAT, null);
+        LOG.info("File Format - " + fileFormat);
+
+        String ignoreHeaderValue = StringUtils.defaultIfEmpty(conf.get(FileAnonymizedOutputFormat.NAME_IGNORE_HEADER, null), "");
+        ignoreHeader = ignoreHeaderValue.equalsIgnoreCase("Yes");
+        LOG.info("Ignore Header - " + ignoreHeader);
 
         fieldList = conf.get(FileAnonymizedOutputFormat.NAME_FIELD_LIST, null);
         LOG.info("Field List - " + fieldList);
@@ -288,18 +293,21 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             return;
         }
 
+        if (fileListData.getFullPath().isEmpty()) {
+            LOG.info("fileListData.getFullPath() is empty");
+            return;
+        }
+
         // construct file paths for source and destination
         String outFileName = destinationPath + fileListData.getRelativePath();
         String contentType = "text/csv";
 
         FileMetaData fileMetaData = null;
         String fullPath = fileListData.getFullPath();
-        if (fullPath != null) {
-            try {
-                fileMetaData = getFileMetaData(fullPath, fileListData.getHostURI());
-            } catch (IOException e) {
-                LOG.error(e.getMessage(), e);
-            }
+        try {
+            fileMetaData = getFileMetaData(fullPath, fileListData.getHostURI());
+        } catch (IOException e) {
+            LOG.error(e.getMessage(), e);
         }
 
         LOG.info("Output File Name " + outFileName);
@@ -396,8 +404,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
                     //TODO: add config for skipping first row
                     //Skip the header row
-                    if (csvRecord.getRecordNumber() == 1) {
-                        LOG.info("Header row");
+                    if (ignoreHeader && csvRecord.getRecordNumber() == 1) {
+                        LOG.info("Ignore Header row");
                         fieldValues.add(plainText);
                     } else {
                         //if field is marked for anonymization then call api
@@ -465,13 +473,13 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                         LOG.info("In getAnonymizedStream::thread");
                         buildAnonymizedContents(outPipe, fileMetaData);
                     } catch (IOException e) {
-                        LOG.error("Failed in getAnonymizedStream::Thread", e);
+                        LOG.error("Throwing RuntimeException from getAnonymizedStream::Thread", e);
                         throw new RuntimeException("Failed while getAnonymizedStream");
                     } finally {
                         try {
                             outPipe.close();
                         } catch (IOException e) {
-                            LOG.error("Failed while closing outPipe in getAnonymizedStream::Thread", e);
+                            LOG.error("Throwing RuntimeException while closing outPipe in getAnonymizedStream::Thread", e);
                             throw new RuntimeException("Failed while closing outPipe in getAnonymizedStream");
                         }
                     }
@@ -484,6 +492,17 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-        //TODO: clean up fpe.delete() and library.delete()
+        LOG.info("In close");
+
+        //delete all FPE instances before the associated LibraryContext instance is deleted.
+        for (FPE value : mapFPE.values()) {
+            value.delete();
+        }
+
+        //it is safe to delete the shared LibraryContext instance.
+        if (library != null) {
+            library.delete();
+        }
+        LOG.info("close completed");
     }
 }

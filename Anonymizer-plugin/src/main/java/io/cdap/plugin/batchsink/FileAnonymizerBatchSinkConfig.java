@@ -60,27 +60,36 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
 
     @Name("policyUrl")
     @Description("Specify the Policy Url")
+    @Macro
     private String policyUrl;
 
     @Name("identity")
     @Description("Specify the Identity")
+    @Macro
     private String identity;
 
     @Name("sharedSecret")
     @Description("Specify the Shared Secret")
+    @Macro
     private String sharedSecret;
 
     @Name("trustStorePath")
     @Description("Specify the Trust Store Path")
+    @Macro
     private String trustStorePath;
 
     @Name("cachePath")
     @Description("Specify the Cache Path")
+    @Macro
     private String cachePath;
 
     @Name("format")
     @Description("Specify the file format")
     private String format;
+
+    @Name("ignoreHeader")
+    @Description("Specify if header row is to be ignored or not")
+    private String ignoreHeader;
 
     @Name("fieldList")
     @Description("Specify the field, anonymization flag and anonymization format combination. " +
@@ -89,7 +98,8 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
 
     public FileAnonymizerBatchSinkConfig(String path, @Nullable String suffix, String project, String serviceFilePath,
                                          String bufferSize, String policyUrl, String identity, String sharedSecret,
-                                         String trustStorePath, String cachePath, String format, String fieldList) {
+                                         String trustStorePath, String cachePath, String format, String ignoreHeader,
+                                         String fieldList) {
         this.path = path;
         this.suffix = suffix;
         this.project = project;
@@ -101,6 +111,7 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
         this.trustStorePath = trustStorePath;
         this.cachePath = cachePath;
         this.format = format;
+        this.ignoreHeader = ignoreHeader;
         this.fieldList = fieldList;
     }
 
@@ -156,6 +167,10 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
         return format;
     }
 
+    public String getIgnoreHeader() {
+        return ignoreHeader;
+    }
+
     public String getFieldList() {
         return fieldList;
     }
@@ -173,8 +188,7 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
                 destinationPath += now.format(formatter) + "/";
             } catch (Exception e) {
                 LOG.error("Error while processing suffix - ", e);
-                throw new IllegalArgumentException(
-                        "Error while processing suffix.");
+                throw new IllegalArgumentException("Error while processing suffix.");
 
             }
         }
