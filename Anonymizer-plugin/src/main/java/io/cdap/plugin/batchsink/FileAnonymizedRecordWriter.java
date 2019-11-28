@@ -195,6 +195,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     .setTrustStorePath(trustStorePath)
                     .build();
 
+            LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
+
             /*
             // Dev Guide Code Snippet: FPEBUILD; LC:5
             // Protect and access the credit card number
@@ -219,6 +221,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                             .setSharedSecret(sharedSecret)
                             .setIdentity(identity)
                             .build();
+                    LOG.info(fpe.getFullIdentity());
+                    LOG.info("Created library.getFPEBuilder for {}...", fieldFormat);
                     mapFPE.put(fieldFormat, fpe);
                 }
             }
