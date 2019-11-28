@@ -103,6 +103,27 @@
           "widget-attributes": {
             "default": "yyyy-MM-dd-HH-mm"
           }
+        },
+        {
+          "widget-type": "select",
+          "label": "Proxy Type",
+          "name": "proxyType",
+          "widget-attributes": {
+            "values": [
+              "SOCKS",
+              "HTTP",
+              "NONE"
+            ],
+            "default": "NONE"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Proxy Connection",
+          "name": "proxy",
+          "widget-attributes" : {
+            "placeholder": "host:port"
+          }
         }
       ]
     },

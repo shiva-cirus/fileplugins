@@ -25,6 +25,6 @@ public class FieldInfo {
 
     @Override
     public String toString() {
-        return String.format("n=%s|a=%s|f=%s", name,anonymize,format);
+        return String.format("%s:%s:%s", name, anonymize ? "YES" : "NO", format);
     }
 }

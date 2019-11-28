@@ -66,7 +66,25 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
             throw new IllegalArgumentException(String.format("Buffer size must be a numeric value for %s plugin. Please provide the same.", NAME));
         }
 
-        //TODO: add validations for fieldList
+        if (config.useProxy() && StringUtils.isEmpty(config.getProxy())) {
+            throw new IllegalArgumentException(String.format("Proxy host and port is required for %s plugin. Please provide the same.", NAME));
+        }
+
+        if (StringUtils.isNotEmpty(config.getProxy())) {
+            String[] proxyComponents = StringUtils.splitByWholeSeparatorPreserveAllTokens(config.getProxy(), ":");
+            if (proxyComponents.length != 2) {
+                throw new IllegalArgumentException(String.format("Invalid proxy value for %s plugin. It must be in \"host:port\" format. Please provide the same.", NAME));
+            }
+            int port = NumberUtils.toInt(proxyComponents[1], 0);
+            if (port == 0) {
+                throw new IllegalArgumentException(String.format("Invalid proxy port value for %s plugin. Please correct the same.", NAME));
+            }
+        }
+
+        //validations for fieldList
+        if (StringUtils.isEmpty(config.getFieldList())) {
+            throw new IllegalArgumentException(String.format("Anonymized field list is required for %s plugin. Please provide the same.", NAME));
+        }
 
         LOG.info("prepareRun completed");
     }
@@ -124,6 +142,8 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
             FileAnonymizedOutputFormat.setFormat(conf, config.getFormat());
             FileAnonymizedOutputFormat.setIgnoreHeader(conf, config.getIgnoreHeader());
             FileAnonymizedOutputFormat.setFieldList(conf, config.getFieldList());
+            FileAnonymizedOutputFormat.setProxy(conf, config.getProxy());
+            FileAnonymizedOutputFormat.setProxyType(conf, config.getProxyType());
         }
 
         @Override

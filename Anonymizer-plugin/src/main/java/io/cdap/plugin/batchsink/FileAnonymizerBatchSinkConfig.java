@@ -22,6 +22,8 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
     public static final String NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceFilePath";
     public static final String NAME_BUFFER_SIZE = "bufferSize";
     public static final String AUTO_DETECT = "auto-detect";
+    public static final String NAME_PROXY = "proxy";
+    public static final String NAME_PROXY_TYPE = "proxyType";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileAnonymizerBatchSinkConfig.class);
 
@@ -96,10 +98,21 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
             "Format is <field>:<anonymize-flag>:<anonymize-format>[,<field>:<anonymize-flag>:<anonymize-format>]*")
     private String fieldList;
 
+    @Name(NAME_PROXY)
+    @Description("The proxy to be used. If none specified it will make a direct connection or through " +
+            "the proxy set at the environment level.")
+    @Nullable
+    @Macro
+    private String proxy;
+
+    @Name(NAME_PROXY_TYPE)
+    @Description("Specify the Proxy Type. None - No Proxy , HTTP - Proxy for HTTP , SOCKS - Low level Proxy")
+    private String proxyType = ProxyType.NONE.getType();
+
     public FileAnonymizerBatchSinkConfig(String path, @Nullable String suffix, String project, String serviceFilePath,
                                          String bufferSize, String policyUrl, String identity, String sharedSecret,
                                          String trustStorePath, String cachePath, String format, String ignoreHeader,
-                                         String fieldList) {
+                                         String fieldList, @Nullable String proxy, String proxyType) {
         this.path = path;
         this.suffix = suffix;
         this.project = project;
@@ -113,6 +126,8 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
         this.format = format;
         this.ignoreHeader = ignoreHeader;
         this.fieldList = fieldList;
+        this.proxy = proxy;
+        this.proxyType = proxyType;
     }
 
     @Nullable
@@ -175,6 +190,22 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
         return fieldList;
     }
 
+    @Nullable
+    public String getProxy() {
+        return proxy;
+    }
+
+    public String getProxyType() {
+        return proxyType;
+    }
+
+    public boolean useProxy() {
+        if (Strings.isNullOrEmpty(proxyType) || proxyType.equals(ProxyType.NONE.getType()))
+            return false;
+
+        return true;
+    }
+
     public String getDestinationPath() {
         String destinationPath = GCSPath.from(path).getName();
         if (StringUtils.isNotEmpty(suffix)) {
@@ -209,5 +240,20 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
             projectId = ServiceOptions.getDefaultProjectId();
         }
         return projectId;
+    }
+
+    private enum ProxyType {
+        HTTP("HTTP"),
+        SOCKS("SOCKS"),
+        NONE("NONE");
+        private String type;
+
+        ProxyType(String type) {
+            this.type = type;
+        }
+
+        String getType() {
+            return type;
+        }
     }
 }

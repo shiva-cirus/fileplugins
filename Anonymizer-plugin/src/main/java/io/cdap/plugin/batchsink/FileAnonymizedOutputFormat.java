@@ -42,6 +42,8 @@ public class FileAnonymizedOutputFormat extends OutputFormat {
     public static final String NAME_FILE_FORMAT = "file.format";
     public static final String NAME_IGNORE_HEADER = "ignore.header";
     public static final String NAME_FIELD_LIST = "field.list";
+    public static final String NAME_PROXY = "proxy";
+    public static final String NAME_PROXY_TYPE = "proxytype";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileAnonymizedOutputFormat.class);
 
@@ -99,6 +101,14 @@ public class FileAnonymizedOutputFormat extends OutputFormat {
 
     public static void setFieldList(Map<String, String> conf, String value) {
         conf.put(NAME_FIELD_LIST, value == null ? "" : value);
+    }
+
+    public static void setProxy(Map<String, String> conf, String value) {
+        conf.put(NAME_PROXY, value == null ? "" : value);
+    }
+
+    public static void setProxyType(Map<String, String> conf, String value) {
+        conf.put(NAME_PROXY_TYPE, value == null ? "" : value);
     }
 
     @Override

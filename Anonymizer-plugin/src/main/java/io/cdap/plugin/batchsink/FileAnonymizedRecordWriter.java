@@ -16,9 +16,14 @@
 
 package io.cdap.plugin.batchsink;
 
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.auth.Credentials;
+import com.google.auth.http.HttpTransportFactory;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.TransportOptions;
 import com.google.cloud.WriteChannel;
+import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.*;
 import com.voltage.securedata.enterprise.FPE;
 import com.voltage.securedata.enterprise.LibraryContext;
@@ -31,6 +36,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.io.NullWritable;
@@ -41,6 +47,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,6 +87,11 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     private boolean ignoreHeader;
     private String fieldList;
     private List<FieldInfo> fields;
+    private final String proxy;
+    private String proxyHost;
+    private int proxyPort;
+    private String proxyType;
+    private final boolean useProxy;
 
     private LibraryContext library = null;
     private Map<String, FPE> mapFPE = new HashMap<>();
@@ -127,8 +140,22 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
         parseFields(fieldList);
 
+        proxy = conf.get(FileAnonymizedOutputFormat.NAME_PROXY, null);
+        LOG.info("Proxy - " + proxy);
+
+        if (conf.get(FileAnonymizedOutputFormat.NAME_PROXY_TYPE).equals("NONE")) {
+            useProxy = false;
+            LOG.info("Proxy is not set");
+        } else {
+            useProxy = true;
+            LOG.info("Using Proxy.");
+        }
+
+        proxyType = conf.get(FileAnonymizedOutputFormat.NAME_PROXY_TYPE, null);
+        LOG.info("Proxy Type - " + proxyType);
+
         // Create GCS Storage using the credentials
-        storage = getGoogleStorage(gcsServiceAccountJson, project);
+        storage = getGoogleStorage(gcsServiceAccountJson, project, proxy, proxyType, useProxy);
         LOG.info("Created GCS Storage");
         bucket = getBucket(storage, bucketName);
         LOG.info("Created GCS Bucket");
@@ -247,14 +274,27 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             fields.add(field);
         }
 
-        LOG.info("fields = {}", StringUtils.join(fields, "#"));
+        LOG.info("fields = {}", StringUtils.join(fields, ","));
     }
 
     private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
         return new FileMetaData(uri + '/' + filePath, conf);
     }
 
-    private Storage getGoogleStorage(String serviceAccountJSON, String project) {
+    private void extractHostAndPortFromProxy() {
+        if (StringUtils.isNotEmpty(proxy)) {
+            String[] proxyComponents = StringUtils.splitByWholeSeparatorPreserveAllTokens(proxy, ":");
+            if (proxyComponents.length > 0) {
+                proxyHost = proxyComponents[0];
+            }
+
+            if (proxyComponents.length > 1) {
+                proxyPort = NumberUtils.toInt(proxyComponents[1], 0);
+            }
+        }
+    }
+
+    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxy, String proxyType, boolean useProxy) {
         Credentials credentials = null;
         try {
             credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON));
@@ -262,13 +302,34 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             LOG.error(e.getMessage(), e);
         }
 
-        Storage storage = StorageOptions.newBuilder()
+        StorageOptions.Builder builder = StorageOptions.newBuilder()
                 .setCredentials(credentials)
-                .setProjectId(project)
-                .build()
-                .getService();
+                .setProjectId(project);
 
-        return storage;
+        if (useProxy) {
+            extractHostAndPortFromProxy();
+
+            LOG.info("Proxy Host - " + proxyHost);
+            LOG.info("Proxy Port - " + proxyPort);
+
+            HttpTransportFactory transportFactory = new HttpTransportFactory() {
+
+                @Override
+                public HttpTransport create() {
+
+                    if ("SOCKS".equals(proxyType)) {
+                        return new NetHttpTransport.Builder().setProxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort))).build();
+                    } else {
+                        return new NetHttpTransport.Builder().setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort))).build();
+                    }
+                }
+            };
+
+            TransportOptions transportOptions = HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build();
+            builder.setTransportOptions(transportOptions);
+        }
+
+        return builder.build().getService();
     }
 
     private Bucket getBucket(Storage storage, String bucketName) {
@@ -330,9 +391,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         }
         */
 
-        BlobId blobId = BlobId.of(bucket.getName(), outFileName);
-        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
-
         InputStream inputStream = null;
 
         try {
@@ -347,6 +405,9 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             LOG.warn("File Anonymization failed for {} hence skipping GCS upload.", fileMetaData.getPath().getName());
             return;
         }
+
+        BlobId blobId = BlobId.of(bucket.getName(), outFileName);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
 
         try {
             byte[] buffer = new byte[bufferSize];
@@ -406,8 +467,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     String plainText = csvRecord.get(columnIndex);
                     LOG.info("R{}:C{} = {}", csvRecord.getRecordNumber(), columnIndex, plainText);
 
-                    //TODO: add config for skipping first row
-                    //Skip the header row
+                    //Skip the header row if ignoreHeader is true
                     if (ignoreHeader && csvRecord.getRecordNumber() == 1) {
                         LOG.info("Ignore Header row");
                         fieldValues.add(plainText);
@@ -471,24 +531,29 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         PipedInputStream inPipe = new PipedInputStream();
         inPipe.connect(outPipe);
 
-        new Thread(
-                () -> {
-                    try {
-                        LOG.info("In getAnonymizedStream::thread");
-                        buildAnonymizedContents(outPipe, fileMetaData);
-                    } catch (IOException e) {
-                        LOG.error("Throwing RuntimeException from getAnonymizedStream::Thread", e);
-                        throw new RuntimeException("Failed while getAnonymizedStream");
-                    } finally {
+        try {
+            new Thread(
+                    () -> {
                         try {
-                            outPipe.close();
+                            LOG.info("In getAnonymizedStream::thread");
+                            buildAnonymizedContents(outPipe, fileMetaData);
                         } catch (IOException e) {
-                            LOG.error("Throwing RuntimeException while closing outPipe in getAnonymizedStream::Thread", e);
-                            throw new RuntimeException("Failed while closing outPipe in getAnonymizedStream");
+                            LOG.error("Throwing RuntimeException from getAnonymizedStream::Thread", e);
+                            throw new RuntimeException("Failed while getAnonymizedStream");
+                        } finally {
+                            try {
+                                outPipe.close();
+                            } catch (IOException e) {
+                                LOG.error("Throwing RuntimeException while closing outPipe in getAnonymizedStream::Thread", e);
+                                throw new RuntimeException("Failed while closing outPipe in getAnonymizedStream");
+                            }
                         }
-                    }
-                })
-                .start();
+                    })
+                    .start();
+        } catch (Exception e) {
+            LOG.error("Caught Exception in getAnonymizedStream", e);
+            throw new IOException(e);
+        }
 
         LOG.info("getAnonymizedStream completed");
         return inPipe;
