@@ -2,10 +2,10 @@
   "metadata": {
     "spec-version": "1.5"
   },
-  "display-name": "File List Capturer",
+  "display-name": "Files Decrypter and Decompressor",
   "configuration-groups": [
     {
-      "label": "File List Configuration",
+      "label": "Files Decrypter and Decompressor Configuration",
       "properties": [
         {
           "widget-type": "textbox",

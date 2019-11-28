@@ -131,10 +131,10 @@ public class FileUtil {
   public static void main(String[] args) throws Exception {
     Security.addProvider(new BouncyCastleProvider());
     String filePath =
-        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/filelist-plugin/enc/_2019-11-27-12-34_domain_master.csv.pgp";
-    String keyFileName = "PGP1D0.skr";
+        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/enc_compress/domain_master.csv.zip.pgp";
+    String keyFileName = "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr";
     String privateKeyPassword = "passphrase";
-    InputStream inputStream = decrypt(filePath, keyFileName, privateKeyPassword.toCharArray());
+    InputStream inputStream = decryptAndDecompress(filePath, keyFileName, privateKeyPassword.toCharArray());
     try {
       InputStreamReader isReader = new InputStreamReader(inputStream);
       // Creating a BufferedReader object

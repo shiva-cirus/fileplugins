@@ -1,5 +1,6 @@
 package io.cdap.plugin.file.ingest.util;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -37,7 +38,7 @@ public class PGPCertUtil {
             return null;
         }
 
-        return pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(pass));
+        return pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider()).build(pass));
     }
 
     public static PGPPublicKey readPublicKey(String fileName) throws IOException, PGPException {

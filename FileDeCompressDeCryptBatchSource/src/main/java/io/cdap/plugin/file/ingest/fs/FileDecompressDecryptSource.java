@@ -37,23 +37,25 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 
 import java.io.*;
 import java.net.URI;
 import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
 /** FileCopySource plugin that pulls filemetadata from local filesystem or local HDFS. */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
-@Name("FileDeCompressDeCryptSource")
+@Name("FileDecompressDecryptSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
-public class FileDeCompressDeCryptSource extends AbstractFileListSource<FileListData> {
+public class FileDecompressDecryptSource extends AbstractFileListSource<FileListData> {
 
   private FileMetadataSourceConfig config;
 
-  public FileDeCompressDeCryptSource(FileMetadataSourceConfig config) {
+  public FileDecompressDecryptSource(FileMetadataSourceConfig config) {
     super(config);
     this.config = config;
   }

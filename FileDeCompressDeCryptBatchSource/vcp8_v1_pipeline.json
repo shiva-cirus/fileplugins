@@ -17,7 +17,7 @@
     },
     "connections": [
       {
-        "from": "File List Capturer",
+        "from": "Files Decrypter and Decompressor",
         "to": "Wrangler"
       },
       {
@@ -32,25 +32,25 @@
     "stageLoggingEnabled": true,
     "stages": [
       {
-        "name": "File List Capturer",
+        "name": "Files Decrypter and Decompressor",
         "plugin": {
-          "name": "FileListSource",
+          "name": "FileDecompressDecryptSource",
           "type": "batchsource",
-          "label": "File List Capturer",
+          "label": "Files Decrypter and Decompressor",
           "artifact": {
-            "name": "FileListSource",
+            "name": "FileDecompressDecryptSource",
             "version": "1.1.0-SNAPSHOT",
             "scope": "USER"
           },
           "properties": {
             "scheme": "file",
             "decrypt": "true",
-            "decompress": "false",
+            "decompress": "true",
             "recursiveCopy": "true",
-            "sourcePaths": "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/filelist-plugin/enc/",
+            "sourcePaths": "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/enc_compress/",
             "referenceName": "input",
+            "privateKeyFilePath": "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr",
             "password": "passphrase",
-            "privateKeyFilePath": "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/filelist-plugin/PGP1D0.skr",
             "maxSplitSize": "1"
           }
         },
@@ -89,7 +89,7 @@
         ],
         "inputSchema": [
           {
-            "name": "File List Capturer",
+            "name": "Files Decrypter and Decompressor",
             "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
           }
         ]
