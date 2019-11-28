@@ -31,40 +31,6 @@
         },
         {
           "widget-type": "textbox",
-          "label": "Private key File Path",
-          "name": "privateKeyFilePath"
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Private key Password",
-          "name": "password"
-        },
-        {
-          "widget-type": "select",
-          "label": "Decrypt File",
-          "name": "decrypt",
-          "widget-attributes": {
-            "values": [
-              "true",
-              "false"
-            ],
-            "default": "true"
-          }
-        },
-        {
-          "widget-type": "select",
-          "label": "Decompress File",
-          "name": "decompress",
-          "widget-attributes": {
-            "values": [
-              "true",
-              "false"
-            ],
-            "default": "true"
-          }
-        },
-        {
-          "widget-type": "textbox",
           "label": "Max Split Size",
           "name": "maxSplitSize"
         },
@@ -91,7 +57,19 @@
         "type": "record",
         "fields": [
           {
-            "name": "body",
+            "name": "fileName",
+            "type": "string"
+          },
+          {
+            "name": "fullPath",
+            "type": "string"
+          },
+          {
+            "name": "relativePath",
+            "type": "string"
+          },
+          {
+            "name": "hostURI",
             "type": "string"
           }
         ]

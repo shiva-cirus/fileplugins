@@ -41,13 +41,15 @@ public class FileListData implements Comparable<FileListData> {
   public static final String IS_DIR = "isDir";
   public static final String RELATIVE_PATH = "relativePath";
   public static final String HOST_URI = "hostURI";
-  public static final String BODY = "body";
 
   // The default schema that will be used to convert this object to a StructuredRecord.
   public static final Schema DEFAULT_SCHEMA =
       Schema.recordOf(
           "metadata",
-          Schema.Field.of(BODY, Schema.of(Schema.Type.STRING)));
+          Schema.Field.of(FILE_NAME, Schema.of(Schema.Type.STRING)),
+          Schema.Field.of(FULL_PATH, Schema.of(Schema.Type.STRING)),
+          Schema.Field.of(RELATIVE_PATH, Schema.of(Schema.Type.STRING)),
+          Schema.Field.of(HOST_URI, Schema.of(Schema.Type.STRING)));
 
   // contains only the name of the file
   private final String fileName;
