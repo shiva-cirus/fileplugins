@@ -1,0 +1,101 @@
+{
+  "metadata": {
+    "spec-version": "1.5"
+  },
+  "display-name": "File List Capturer",
+  "configuration-groups": [
+    {
+      "label": "File List Configuration",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Reference Name",
+          "name": "referenceName"
+        },
+        {
+          "widget-type": "select",
+          "label": "Scheme",
+          "name": "scheme",
+          "widget-attributes": {
+            "values": [
+              "hdfs",
+              "file"
+            ],
+            "default": "file"
+          }
+        },
+        {
+          "widget-type": "csv",
+          "label": "Source Paths",
+          "name": "sourcePaths"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Private key File Path",
+          "name": "privateKeyFilePath"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Private key Password",
+          "name": "password"
+        },
+        {
+          "widget-type": "select",
+          "label": "Decrypt File",
+          "name": "decrypt",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Decompress File",
+          "name": "decompress",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Max Split Size",
+          "name": "maxSplitSize"
+        },
+        {
+          "widget-type": "select",
+          "label": "Copy Recursively",
+          "name": "recursiveCopy",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "widget-type": "non-editable-schema-editor",
+      "schema": {
+        "name": "etlSchemaBody",
+        "type": "record",
+        "fields": [
+          {
+            "name": "body",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}
