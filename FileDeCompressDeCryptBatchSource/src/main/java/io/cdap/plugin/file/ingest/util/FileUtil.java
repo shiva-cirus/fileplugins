@@ -121,20 +121,35 @@ public class FileUtil {
     if (sKey == null) {
       throw new IllegalArgumentException("secret key for message not found.");
     }
+
+    InputStream clear =
+            pbe.getDataStream(
+                    new JcePublicKeyDataDecryptorFactoryBuilder()
+                            .setProvider(new BouncyCastleProvider())
+                            .build(sKey));
     keyIn.close();
-    return pbe.getDataStream(
-        new JcePublicKeyDataDecryptorFactoryBuilder()
-            .setProvider(new BouncyCastleProvider())
-            .build(sKey));
+    JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
+
+    Object message = plainFact.nextObject();
+
+    if (message instanceof PGPLiteralData) {
+      PGPLiteralData ld = (PGPLiteralData) message;
+      InputStream decryptStream = ld.getInputStream();
+      return decryptStream;
+    } else if (message instanceof PGPOnePassSignatureList) {
+      throw new PGPException("encrypted message contains a signed message - not literal data.");
+    } else {
+      throw new PGPException("message is not a simple encrypted file - type unknown.");
+    }
   }
 
   public static void main(String[] args) throws Exception {
     Security.addProvider(new BouncyCastleProvider());
     String filePath =
-        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/enc_compress/domain_master.csv.zip.pgp";
+        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/enc/domain_master.csv.pgp";
     String keyFileName = "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr";
     String privateKeyPassword = "passphrase";
-    InputStream inputStream = decryptAndDecompress(filePath, keyFileName, privateKeyPassword.toCharArray());
+    InputStream inputStream = decrypt(filePath, keyFileName, privateKeyPassword.toCharArray());
     try {
       InputStreamReader isReader = new InputStreamReader(inputStream);
       // Creating a BufferedReader object
