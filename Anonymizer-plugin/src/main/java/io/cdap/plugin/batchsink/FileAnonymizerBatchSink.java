@@ -42,14 +42,14 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
     @Override
     public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
         super.configurePipeline(pipelineConfigurer);
-        LOG.info("In configurePipeline");
+        LOG.debug("In configurePipeline");
     }
 
     // prepareRun is called before every pipeline run, and is used to configure what the input should be,
     // as well as any arguments the input should use. It is called by the client that is submitting the batch job.
     @Override
     public void prepareRun(BatchSinkContext context) throws Exception {
-        LOG.info("In prepareRun");
+        LOG.debug("In prepareRun");
         context.addOutput(Output.of("FileCopyOutputFormatProvider", new FileCopyOutputFormatProvider(config)));
 
         //validation for suffix
@@ -86,7 +86,7 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
             throw new IllegalArgumentException(String.format("Anonymized field list is required for %s plugin. Please provide the same.", NAME));
         }
 
-        LOG.info("prepareRun completed");
+        LOG.debug("prepareRun completed");
     }
 
     // onRunFinish is called at the end of the pipeline run by the client that submitted the batch job.
@@ -101,7 +101,7 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
     @Override
     public void initialize(BatchRuntimeContext context) throws Exception {
         super.initialize(context);
-        LOG.info("In initialize");
+        LOG.debug("In initialize");
     }
 
     // destroy is called by each job executor at the end of its life.
@@ -113,10 +113,10 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
 
     @Override
     public void transform(StructuredRecord input, Emitter<KeyValue<NullWritable, FileListData>> emitter) throws Exception {
-        LOG.info("In transform");
+        LOG.debug("In transform");
         FileListData output = new FileListData(input);
         emitter.emit(new KeyValue<NullWritable, FileListData>(null, output));
-        LOG.info("transform completed");
+        LOG.debug("transform completed");
     }
 
     /**

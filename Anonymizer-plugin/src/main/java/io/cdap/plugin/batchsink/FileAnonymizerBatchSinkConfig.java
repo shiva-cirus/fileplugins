@@ -220,7 +220,6 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
             } catch (Exception e) {
                 LOG.error("Error while processing suffix - ", e);
                 throw new IllegalArgumentException("Error while processing suffix.");
-
             }
         }
         return destinationPath;

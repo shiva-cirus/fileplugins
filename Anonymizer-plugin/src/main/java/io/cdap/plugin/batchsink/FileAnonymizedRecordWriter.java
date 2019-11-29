@@ -161,8 +161,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         LOG.info("Created GCS Bucket");
 
         try {
-            LOG.info("In initialize");
-            System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib");
+            LOG.debug("In initialize");
+            //System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib");
             /*
             LOG.info("Print all default System Properties as seen by Plugin");
             Properties p = System.getProperties();
@@ -174,7 +174,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             }
             */
 
-            LOG.info("java.library.path = {}", "/opt/DA/javasimpleapi/lib");
+            //LOG.info("java.library.path = {}", "/opt/DA/javasimpleapi/lib");
             Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
             fieldSysPath.setAccessible(true);
             fieldSysPath.set(null, null);
@@ -227,17 +227,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     .setTrustStorePath(trustStorePath)
                     .build();
 
-            LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
-
-            /*
-            // Dev Guide Code Snippet: FPEBUILD; LC:5
-            // Protect and access the credit card number
-            fpe = library.getFPEBuilder(format)
-                    .setSharedSecret(sharedSecret)
-                    .setIdentity(identity)
-                    .build();
-            */
-
             //Build map of FPE objects for each format
             for (FieldInfo field : fields) {
                 if (!field.isAnonymize()) {
@@ -253,8 +242,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                             .setSharedSecret(sharedSecret)
                             .setIdentity(identity)
                             .build();
-                    LOG.info(fpe.getFullIdentity());
-                    LOG.info("Created library.getFPEBuilder for {}...", fieldFormat);
+                    LOG.debug(fpe.getFullIdentity());
+                    LOG.debug("Created library.getFPEBuilder for {}...", fieldFormat);
                     mapFPE.put(fieldFormat, fpe);
                 }
             }
@@ -274,7 +263,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             fields.add(field);
         }
 
-        LOG.info("fields = {}", StringUtils.join(fields, ","));
+        LOG.debug("fields = {}", StringUtils.join(fields, ","));
     }
 
     private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
@@ -352,14 +341,14 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
      */
     @Override
     public void write(NullWritable key, FileListData fileListData) throws IOException, InterruptedException {
-        LOG.info("In write");
+        LOG.debug("In write");
         if (fileListData.getRelativePath().isEmpty()) {
-            LOG.info("fileListData.getRelativePath() is empty");
+            LOG.warn("fileListData.getRelativePath() is empty");
             return;
         }
 
         if (fileListData.getFullPath().isEmpty()) {
-            LOG.info("fileListData.getFullPath() is empty");
+            LOG.warn("fileListData.getFullPath() is empty");
             return;
         }
 
@@ -376,20 +365,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         }
 
         LOG.info("Output File Name " + outFileName);
-
-        /*
-        try {
-            String plaintext = "123-45-6789";
-
-            LOG.info("Anonymizing {}...", plaintext);
-            // Dev Guide Code Snippet: FPEPROTECT; LC:1
-            String ciphertext = fpe.protect(plaintext);
-
-            LOG.info("Anonymizing {} = {}...", plaintext, ciphertext);
-        } catch (VeException ve) {
-            LOG.error("Error while anonymizing.", ve);
-        }
-        */
 
         InputStream inputStream = null;
 
@@ -426,11 +401,11 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             }
         }
 
-        LOG.info("write completed");
+        LOG.debug("write completed");
     }
 
     private void buildAnonymizedContents(OutputStream outPipe, FileMetaData fileMetaData) throws IOException {
-        LOG.info("In buildAnonymizedContents");
+        LOG.debug("In buildAnonymizedContents");
         try (
                 FSDataInputStream in = fileMetaData.getFileSystem().open(fileMetaData.getPath());
                 InputStreamReader reader = new InputStreamReader(in);
@@ -442,13 +417,13 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                 throw new IOException(String.format("The input file '%s' is empty", fileMetaData.getPath().getName()));
             }
 
-            LOG.info("# of records in {} = {}", fileMetaData.getPath().getName(), records.size());
+            LOG.debug("# of records in {} = {}", fileMetaData.getPath().getName(), records.size());
 
             CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(outPipe), CSVFormat.DEFAULT);
 
             List<Object> fieldValues = new ArrayList<>();
             for (CSVRecord csvRecord : records) {
-                LOG.info("Processing record {}", csvRecord.getRecordNumber());
+                LOG.debug("Processing record {}", csvRecord.getRecordNumber());
                 if (csvRecord.size() < fields.size()) {
                     LOG.error(String.format("Invalid number of columns at line %d in '%s' file", csvRecord.getRecordNumber(), fileMetaData.getPath().getName()));
                     printer.close();
@@ -465,7 +440,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     }
 
                     String plainText = csvRecord.get(columnIndex);
-                    LOG.info("R{}:C{} = {}", csvRecord.getRecordNumber(), columnIndex, plainText);
+                    LOG.debug("R{}:C{} = {}", csvRecord.getRecordNumber(), columnIndex, plainText);
 
                     //Skip the header row if ignoreHeader is true
                     if (ignoreHeader && csvRecord.getRecordNumber() == 1) {
@@ -474,7 +449,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                     } else {
                         //if field is marked for anonymization then call api
                         if (field != null && field.isAnonymize() && StringUtils.isNotEmpty(plainText)) {
-                            LOG.info("field != null && field.isAnonymize()");
+                            LOG.debug("field != null && field.isAnonymize()");
                             String cipherText = anonymize(plainText, field.getFormat());
                             if (cipherText == null) {
                                 LOG.error(String.format("Unable to anonymize '%s' value for column '%s' at line %d in '%s' file.",
@@ -487,7 +462,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                             }
                         } else {
                             //otherwise use the original value as is
-                            LOG.info("in else");
+                            LOG.debug("in else");
                             fieldValues.add(plainText);
                         }
                     }
@@ -495,7 +470,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                 printer.printRecord(fieldValues);
             }
 
-            LOG.info("Processed all records");
+            LOG.debug("Processed all records");
 
             printer.close();
         } catch (Exception e) {
@@ -507,7 +482,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     private String anonymize(String plainText, String format) {
         String cipherText = null;
         try {
-            LOG.info("Anonymizing {} with {} format...", plainText, format);
+            LOG.debug("Anonymizing {} with {} format...", plainText, format);
 
             FPE fpe = mapFPE.get(format);
             if (fpe == null) {
@@ -517,7 +492,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             // Dev Guide Code Snippet: FPEPROTECT; LC:1
             cipherText = fpe.protect(plainText);
 
-            LOG.info("Anonymizing {} with {} format = {}...", plainText, format, cipherText);
+            LOG.debug("Anonymizing {} with {} format = {}...", plainText, format, cipherText);
         } catch (VeException ve) {
             LOG.error("Error while anonymizing.", ve);
         }
@@ -526,7 +501,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     }
 
     private InputStream getAnonymizedStream(FileMetaData fileMetaData) throws IOException {
-        LOG.info("In getAnonymizedStream");
+        LOG.debug("In getAnonymizedStream");
         PipedOutputStream outPipe = new PipedOutputStream();
         PipedInputStream inPipe = new PipedInputStream();
         inPipe.connect(outPipe);
@@ -535,7 +510,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             new Thread(
                     () -> {
                         try {
-                            LOG.info("In getAnonymizedStream::thread");
+                            LOG.debug("In getAnonymizedStream::thread");
                             buildAnonymizedContents(outPipe, fileMetaData);
                         } catch (IOException e) {
                             LOG.error("Throwing RuntimeException from getAnonymizedStream::Thread", e);
@@ -550,18 +525,27 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                         }
                     })
                     .start();
+
+            /*
+            MyThread t = new MyThread(outPipe, fileMetaData);
+            t.start();
+            t.join();
+            if (!t.isRunning() && t.getException() != null) {
+                throw t.getException();
+            }
+            */
         } catch (Exception e) {
-            LOG.error("Caught Exception in getAnonymizedStream", e);
+            LOG.error("Caught Exception in getAnonymizedStream");
             throw new IOException(e);
         }
 
-        LOG.info("getAnonymizedStream completed");
+        LOG.debug("getAnonymizedStream completed");
         return inPipe;
     }
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-        LOG.info("In close");
+        LOG.debug("In close");
 
         //delete all FPE instances before the associated LibraryContext instance is deleted.
         for (FPE value : mapFPE.values()) {
@@ -572,6 +556,49 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         if (library != null) {
             library.delete();
         }
-        LOG.info("close completed");
+        LOG.debug("close completed");
+    }
+
+    public class MyThread extends Thread {
+        private PipedOutputStream outPipe;
+        private FileMetaData fileMetaData;
+        private boolean running;
+        private Exception exception;
+
+        public MyThread(PipedOutputStream outPipe, FileMetaData fileMetaData) {
+            this.outPipe = outPipe;
+            this.fileMetaData = fileMetaData;
+            running = false;
+        }
+
+        public boolean isRunning() {
+            return running;
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+
+        @Override
+        public void run() {
+            running = true;
+            try {
+                LOG.debug("In MyThread::run");
+                buildAnonymizedContents(outPipe, fileMetaData);
+                running = false;
+            } catch (IOException e) {
+                LOG.error("Catching IOException in MyThread::run");
+                running = false;
+                exception = e;
+            } finally {
+                try {
+                    outPipe.close();
+                } catch (IOException e) {
+                    LOG.error("Catching IOException while closing outPipe in MyThread::run");
+                    running = false;
+                    exception = e;
+                }
+            }
+        }
     }
 }
