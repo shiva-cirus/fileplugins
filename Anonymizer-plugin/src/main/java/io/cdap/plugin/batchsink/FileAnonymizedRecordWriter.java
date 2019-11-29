@@ -259,6 +259,9 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         String[] list = StringUtils.splitPreserveAllTokens(fieldList, ",");
         for (String entry : list) {
             String[] attributes = StringUtils.splitPreserveAllTokens(entry, ":", 3);
+            if (attributes.length < 3) {
+                continue;
+            }
             FieldInfo field = new FieldInfo(attributes[0], attributes[1].equalsIgnoreCase("Yes"), attributes[2]);
             fields.add(field);
         }

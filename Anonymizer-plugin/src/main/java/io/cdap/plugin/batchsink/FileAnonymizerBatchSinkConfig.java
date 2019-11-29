@@ -96,6 +96,7 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
     @Name("fieldList")
     @Description("Specify the field, anonymization flag and anonymization format combination. " +
             "Format is <field>:<anonymize-flag>:<anonymize-format>[,<field>:<anonymize-flag>:<anonymize-format>]*")
+    @Macro
     private String fieldList;
 
     @Name(NAME_PROXY)

@@ -12,6 +12,7 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
+import io.cdap.plugin.batchsink.common.FieldInfo;
 import io.cdap.plugin.batchsink.common.FileListData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -20,12 +21,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(FileAnonymizerBatchSink.NAME)
-@Description("File Compress / Encrypt and Persist to GCS.")
+@Description("File Anonymize and Persist to GCS.")
 public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWritable, FileListData> {
     public static final String NAME = "FileAnonymizerBatchSink";
 
@@ -84,6 +87,11 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
         //validations for fieldList
         if (StringUtils.isEmpty(config.getFieldList())) {
             throw new IllegalArgumentException(String.format("Anonymized field list is required for %s plugin. Please provide the same.", NAME));
+        } else {
+            List<FieldInfo> fields = parseFields(config.getFieldList());
+            if (fields.isEmpty()) {
+                throw new IllegalArgumentException(String.format("Anonymized field list is not in \"<field>:<anonymize-flag>:<anonymize-format>[,<field>:<anonymize-flag>:<anonymize-format>]*\" format for %s plugin. Please provide the same.", NAME));
+            }
         }
 
         LOG.debug("prepareRun completed");
@@ -117,6 +125,22 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
         FileListData output = new FileListData(input);
         emitter.emit(new KeyValue<NullWritable, FileListData>(null, output));
         LOG.debug("transform completed");
+    }
+
+    private List<FieldInfo> parseFields(String fieldList) {
+        List<FieldInfo> fields = new ArrayList<>();
+
+        String[] list = StringUtils.splitPreserveAllTokens(fieldList, ",");
+        for (String entry : list) {
+            String[] attributes = StringUtils.splitPreserveAllTokens(entry, ":", 3);
+            if (attributes.length < 3) {
+                continue;
+            }
+            FieldInfo field = new FieldInfo(attributes[0], attributes[1].equalsIgnoreCase("Yes"), attributes[2]);
+            fields.add(field);
+        }
+
+        return fields;
     }
 
     /**

@@ -22,7 +22,7 @@
     <name>AnonymizerPlugin</name>
     <groupId>io.cdap.plugin</groupId>
     <artifactId>Anonymizer</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <licenses>
