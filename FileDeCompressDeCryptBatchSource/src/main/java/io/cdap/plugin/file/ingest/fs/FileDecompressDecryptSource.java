@@ -172,6 +172,7 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
     @Description("Scheme of the source filesystem.")
     public String scheme;
 
+    @Macro
     @Description("Private key File Path.")
     public String privateKeyFilePath;
 
