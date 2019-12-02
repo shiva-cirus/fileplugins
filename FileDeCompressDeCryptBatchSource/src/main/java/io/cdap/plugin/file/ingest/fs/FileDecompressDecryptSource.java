@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.file.ingest.fs;
 
+import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
@@ -34,17 +35,19 @@ import io.cdap.plugin.file.ingest.AbstractFileListSource;
 import io.cdap.plugin.file.ingest.FileListData;
 import io.cdap.plugin.file.ingest.FileListInputFormat;
 import io.cdap.plugin.file.ingest.util.FileUtil;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URI;
 import java.security.NoSuchProviderException;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,7 +67,7 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     super.configurePipeline(pipelineConfigurer);
-    List<Schema.Field> fieldList = new ArrayList<>(FileListData.DEFAULT_SCHEMA.getFields());
+    List<Schema.Field> fieldList = config.getSchema().getFields();
     pipelineConfigurer
         .getStageConfigurer()
         .setOutputSchema(Schema.recordOf("fileSchema", fieldList));
@@ -125,13 +128,14 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
       // Creating a BufferedReader object
       BufferedReader reader = new BufferedReader(isReader);
 
-      String line = reader.readLine();
-
-      while (line != null) {
-        // read next line
-        emitter.emit(toRecord(line));
-        line = reader.readLine();
+      CSVParser csvParser =
+          new CSVParser(
+              reader,
+              CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
+      for (CSVRecord csvRecord : csvParser) {
+        emitter.emit(toRecord(csvRecord));
       }
+
       inputFileStream.close();
       isReader.close();
       reader.close();
@@ -145,20 +149,26 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
     }
   }
   /** Converts to a StructuredRecord */
-  public StructuredRecord toRecord(String line) {
+  public StructuredRecord toRecord(CSVRecord csvRecord) {
 
     // merge default schema and credential schema to create output schema
     Schema outputSchema;
-    List<Schema.Field> fieldList = new ArrayList<>(FileListData.DEFAULT_SCHEMA.getFields());
+    List<Schema.Field> fieldList = config.getSchema().getFields();
     outputSchema = Schema.recordOf("metadata", fieldList);
 
-    StructuredRecord.Builder outputBuilder =
-        StructuredRecord.builder(outputSchema).set(FileListData.BODY, line);
+    StructuredRecord.Builder outputBuilder = StructuredRecord.builder(outputSchema);
+
+    fieldList.forEach(
+        field -> {
+          outputBuilder.set(field.getName(), csvRecord.get(field.getName()));
+        });
 
     return outputBuilder.build();
   }
   /** Configurations required for connecting to local filesystems. */
   public class FileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
+
+    public static final String NAME_SCHEMA = "schema";
 
     @Description("Scheme of the source filesystem.")
     public String scheme;
@@ -184,6 +194,23 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
 
     @Description("File to be decompress or not")
     public Boolean decompress;
+
+    @Nullable
+    @Description(
+        "Output schema for the source. Formats like 'avro' and 'parquet' require a schema in order to "
+            + "read the data.")
+    private String schema;
+
+    @Nullable
+    public Schema getSchema() {
+      try {
+        return containsMacro(NAME_SCHEMA) || Strings.isNullOrEmpty(schema)
+            ? null
+            : Schema.parseJson(schema);
+      } catch (Exception e) {
+        throw new IllegalArgumentException("Invalid schema: " + e.getMessage(), e);
+      }
+    }
 
     public FileMetadataSourceConfig(
         String name, String sourcePaths, Integer maxSplitSize, String scheme) {

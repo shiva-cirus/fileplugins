@@ -1,5 +1,8 @@
 package io.cdap.plugin.file.ingest.util;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
@@ -123,10 +126,10 @@ public class FileUtil {
     }
 
     InputStream clear =
-            pbe.getDataStream(
-                    new JcePublicKeyDataDecryptorFactoryBuilder()
-                            .setProvider(new BouncyCastleProvider())
-                            .build(sKey));
+        pbe.getDataStream(
+            new JcePublicKeyDataDecryptorFactoryBuilder()
+                .setProvider(new BouncyCastleProvider())
+                .build(sKey));
     keyIn.close();
     JcaPGPObjectFactory plainFact = new JcaPGPObjectFactory(clear);
 
@@ -145,23 +148,26 @@ public class FileUtil {
 
   public static void main(String[] args) throws Exception {
     Security.addProvider(new BouncyCastleProvider());
-    String filePath =
-        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/enc/domain_master.csv.pgp";
-    String keyFileName = "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr";
+    String filePath = "/Users/aca/Desktop/Pawan/cdap/data/vcp8/csv/domain_master.csv.zip.pgp";
+    String keyFileName =
+        "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr";
     String privateKeyPassword = "passphrase";
-    InputStream inputStream = decrypt(filePath, keyFileName, privateKeyPassword.toCharArray());
+    InputStream inputStream =
+        decryptAndDecompress(filePath, keyFileName, privateKeyPassword.toCharArray());
     try {
       InputStreamReader isReader = new InputStreamReader(inputStream);
       // Creating a BufferedReader object
       BufferedReader reader = new BufferedReader(isReader);
 
-      String line = reader.readLine();
-
-      while (line != null) {
-        // read next line
-        System.out.println(line);
-        line = reader.readLine();
+      CSVParser csvParser =
+          new CSVParser(
+              reader,
+              CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
+      for (CSVRecord csvRecord : csvParser) {
+        System.out.println(csvRecord.get("body1"));
+        System.out.println(csvRecord.get("body2"));
       }
+
       inputStream.close();
       isReader.close();
       reader.close();

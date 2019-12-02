@@ -43,11 +43,6 @@ public class FileListData implements Comparable<FileListData> {
   public static final String HOST_URI = "hostURI";
   public static final String BODY = "body";
 
-  // The default schema that will be used to convert this object to a StructuredRecord.
-  public static final Schema DEFAULT_SCHEMA =
-      Schema.recordOf(
-          "metadata",
-          Schema.Field.of(BODY, Schema.of(Schema.Type.STRING)));
 
   // contains only the name of the file
   private final String fileName;
@@ -166,23 +161,6 @@ public class FileListData implements Comparable<FileListData> {
     return isDir;
   }
 
-  /** Converts to a StructuredRecord */
-  public StructuredRecord toRecord() {
-
-    // merge default schema and credential schema to create output schema
-    Schema outputSchema;
-    List<Schema.Field> fieldList = new ArrayList<>(DEFAULT_SCHEMA.getFields());
-    outputSchema = Schema.recordOf("metadata", fieldList);
-
-    StructuredRecord.Builder outputBuilder =
-        StructuredRecord.builder(outputSchema)
-            .set(FILE_NAME, fileName)
-            .set(FULL_PATH, fullPath)
-            .set(RELATIVE_PATH, relativePath)
-            .set(HOST_URI, hostURI);
-
-    return outputBuilder.build();
-  }
 
   /**
    * Compares the size of two files
