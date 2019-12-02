@@ -17,6 +17,7 @@
 package io.cdap.plugin.file.ingest.fs;
 
 import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Input;
@@ -103,7 +104,7 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
   public void transform(
       KeyValue<NullWritable, FileListData> input, Emitter<StructuredRecord> emitter) {
     String filePath = input.getValue().getFullPath();
-    String keyFileName = config.privateKeyFilePath;
+    String privateKeyFilePath = config.privateKeyFilePath;
     char[] privateKeyPassword = config.password.toCharArray(); // "passphrase";
     Boolean decrypt = config.decrypt;
     Boolean decompress = config.decompress;
@@ -112,9 +113,9 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
       if (decrypt) {
         if (decompress) {
           inputFileStream =
-              FileUtil.decryptAndDecompress(filePath, keyFileName, privateKeyPassword);
+              FileUtil.decryptAndDecompress(filePath, privateKeyFilePath, privateKeyPassword);
         } else {
-          inputFileStream = FileUtil.decrypt(filePath, keyFileName, privateKeyPassword);
+          inputFileStream = FileUtil.decrypt(filePath, privateKeyFilePath, privateKeyPassword);
         }
       } else {
         inputFileStream = new FileInputStream(filePath);
@@ -165,10 +166,20 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
     @Description("Private key File Path.")
     public String privateKeyFilePath;
 
+    @Macro
     @Description("Password of the private key")
     public String password;
 
-    @Description("File to be Decypted or not")
+    @Description("Decompression Format")
+    public String decompressionFormat;
+
+    @Description("Decryption Algorithm ")
+    public String decryptionAlgorithm;
+
+    @Description("File  Format ")
+    public String format;
+
+    @Description("File to be Decrypted or not")
     public Boolean decrypt;
 
     @Description("File to be decompress or not")

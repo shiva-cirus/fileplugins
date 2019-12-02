@@ -5,7 +5,7 @@
   "display-name": "Files Decrypter and Decompressor",
   "configuration-groups": [
     {
-      "label": "Files Decrypter and Decompressor Configuration",
+      "label": "Basic",
       "properties": [
         {
           "widget-type": "textbox",
@@ -30,15 +30,46 @@
           "name": "sourcePaths"
         },
         {
-          "widget-type": "textbox",
-          "label": "Private key File Path",
-          "name": "privateKeyFilePath"
-        },
+          "widget-type": "select",
+          "label": "Format",
+          "name": "format",
+          "widget-attributes": {
+            "values": [
+              "csv"
+            ],
+            "default": "csv"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
         {
           "widget-type": "textbox",
-          "label": "Private key Password",
-          "name": "password"
+          "label": "Maximum Split Size",
+          "name": "maxSplitSize",
+          "widget-attributes": {
+            "placeholder": "Maximum split size for each partition specified in bytes"
+          }
         },
+        {
+          "widget-type": "select",
+          "label": "Copy Recursively",
+          "name": "recursiveCopy",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Decryption",
+      "properties": [
         {
           "widget-type": "select",
           "label": "Decrypt File",
@@ -53,25 +84,46 @@
         },
         {
           "widget-type": "select",
-          "label": "Decompress File",
-          "name": "decompress",
+          "label": "Decryption Algorithm",
+          "name": "decryptionAlgorithm",
           "widget-attributes": {
             "values": [
-              "true",
-              "false"
+              "PGP"
             ],
-            "default": "true"
+            "default": "PGP"
           }
         },
         {
           "widget-type": "textbox",
-          "label": "Max Split Size",
-          "name": "maxSplitSize"
+          "label": "Private key File Path",
+          "name": "privateKeyFilePath"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Private key Password",
+          "name": "password"
+        }
+      ]
+    },
+    {
+      "label": "DeCompression",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "DeCompression Format",
+          "name": "decompressionFormat",
+          "widget-attributes": {
+            "values": [
+              "ZIP",
+              "NONE"
+            ],
+            "default": "ZIP"
+          }
         },
         {
           "widget-type": "select",
-          "label": "Copy Recursively",
-          "name": "recursiveCopy",
+          "label": "Decompress File",
+          "name": "decompress",
           "widget-attributes": {
             "values": [
               "true",
