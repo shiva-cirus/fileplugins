@@ -26,26 +26,18 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Abstract class that contains file metadata fields. Extend from this class to add credentials
  * specific to different filesystems.
  */
-public class FileListData implements Comparable<FileListData> {
+public class FileMetaData implements Comparable<FileMetaData> {
 
-  public static final String FILE_NAME = "fileName";
   public static final String FILE_SIZE = "fileSize";
   public static final String FULL_PATH = "fullPath";
   public static final String IS_DIR = "isDir";
   public static final String RELATIVE_PATH = "relativePath";
   public static final String HOST_URI = "hostURI";
-  public static final String BODY = "body";
-
-
-  // contains only the name of the file
-  private final String fileName;
 
   // full path of the file in the source filesystem
   private final String fullPath;
@@ -83,15 +75,14 @@ public class FileListData implements Comparable<FileListData> {
   }
 
   /**
-   * Constructs a FileListData instance given a FileStatus and source path. Override this method to
+   * Constructs a FileMetaData instance given a FileStatus and source path. Override this method to
    * add additional credential fields to the instance.
    *
    * @param fileStatus The FileStatus object that contains raw file metadata for this object.
    * @param sourcePath The user specified path that was used to obtain this file.
    * @throws IOException
    */
-  public FileListData(FileStatus fileStatus, String sourcePath) throws IOException {
-    fileName = fileStatus.getPath().getName();
+  public FileMetaData(FileStatus fileStatus, String sourcePath) throws IOException {
     fullPath = fileStatus.getPath().toUri().getPath();
     isDir = fileStatus.isDirectory();
     fileSize = fileStatus.getLen();
@@ -117,13 +108,12 @@ public class FileListData implements Comparable<FileListData> {
   }
 
   /**
-   * Use this constructor to construct a FileListData from a StructuredRecord. Override this method
+   * Use this constructor to construct a FileMetaData from a StructuredRecord. Override this method
    * if additional credentials are contained in the structured record.
    *
    * @param record The StructuredRecord instance to convert from.
    */
-  public FileListData(StructuredRecord record) {
-    this.fileName = record.get(FILE_NAME);
+  public FileMetaData(StructuredRecord record) {
     this.fullPath = record.get(FULL_PATH);
     this.fileSize = record.get(FILE_SIZE);
     this.isDir = record.get(IS_DIR);
@@ -136,8 +126,7 @@ public class FileListData implements Comparable<FileListData> {
    *
    * @param dataInput The input stream to deserialize from.
    */
-  public FileListData(DataInput dataInput) throws IOException {
-    this.fileName = dataInput.readUTF();
+  public FileMetaData(DataInput dataInput) throws IOException {
     this.fullPath = dataInput.readUTF();
     this.fileSize = dataInput.readLong();
     this.isDir = dataInput.readBoolean();
@@ -149,19 +138,13 @@ public class FileListData implements Comparable<FileListData> {
     return fullPath;
   }
 
-  public String getFileName() {
-    return fileName;
+  public boolean isDir() {
+    return isDir;
   }
 
   public long getFileSize() {
     return fileSize;
   }
-
-  public boolean isDir() {
-    return isDir;
-  }
-
-
   /**
    * Compares the size of two files
    *
@@ -170,12 +153,11 @@ public class FileListData implements Comparable<FileListData> {
    *     as the other file. -1 if this instance is smaller than the other file.
    */
   @Override
-  public int compareTo(FileListData o) {
+  public int compareTo(FileMetaData o) {
     return Long.compare(fileSize, o.getFileSize());
   }
 
   public void write(DataOutput dataOutput) throws IOException {
-    dataOutput.writeUTF(getFileName());
     dataOutput.writeUTF(getFullPath());
     dataOutput.writeLong(getFileSize());
     dataOutput.writeBoolean(isDir());

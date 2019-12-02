@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class FileListDataTest {
+public class FileMetaDataTest {
     @Test
     public void testRelativePathParsing() throws IOException {
         FileStatus fileStatus = new FileStatus();
@@ -31,41 +31,22 @@ public class FileListDataTest {
 
         // Copy a file that is part of a whole directory copy
         String sourcePath = "/source/path/directory";
-        FileListData metadata = new FileListData(fileStatus, sourcePath);
-        Assert.assertEquals("123.txt", metadata.getFileName());
+        FileMetaData metadata = new FileMetaData(fileStatus, sourcePath);
         Assert.assertEquals("/source/path/directory/123.txt", metadata.getFullPath());
 
         // Copy a file that is part of a whole directory copy without including the directory
         sourcePath = "/source/path/";
-        metadata = new FileListData(fileStatus, sourcePath);
-        Assert.assertEquals("123.txt", metadata.getFileName());
+        metadata = new FileMetaData(fileStatus, sourcePath);
         Assert.assertEquals("/source/path/directory/123.txt", metadata.getFullPath());
 
         fileStatus.setPath(new Path("hdfs://12.34.56.78/"));
         sourcePath = "/";
-        metadata = new FileListData(fileStatus, sourcePath);
+        metadata = new FileMetaData(fileStatus, sourcePath);
 
         fileStatus.setPath(new Path("hdfs://12.34.56.78/abc.txt"));
         sourcePath = "/";
-        metadata = new FileListData(fileStatus, sourcePath);
+        metadata = new FileMetaData(fileStatus, sourcePath);
     }
 
-    @Test
-    public void testCompare() throws IOException {
-        final FileStatus statusA = new FileStatus(1, false, 0, 0, 0, new Path("s3a://hello.com/abc/fileA"));
-        final FileStatus statusB = new FileStatus(3, false, 0, 0, 0, new Path("s3a://hello.com/abc/fileB"));
-        final FileStatus statusC = new FileStatus(3, false, 0, 0, 0, new Path("s3a://hello.com/abc/fileC"));
-        final String basePath = "/abc";
 
-        // generate 3 files with different file sizes
-        FileListData file1 = new FileListData(statusA, basePath);
-
-        FileListData file2 = new FileListData(statusB, basePath);
-
-        FileListData file3 = new FileListData(statusC, basePath);
-
-        Assert.assertEquals(-1, file1.compareTo(file2));
-        Assert.assertEquals(0, file3.compareTo(file2));
-        Assert.assertEquals(1, file3.compareTo(file1));
-    }
 }

@@ -31,17 +31,17 @@ import java.util.List;
  * Abstract class that implements information for InputSplit.
  * Contains a list of fileMetadata that is assigned to the specific split.
  */
-public class FileListInputSplit extends InputSplit implements Writable, Comparable {
-    private List<FileListData> fileMetaDataList;
-    private static final Logger LOG = LoggerFactory.getLogger(FileListInputSplit.class);
+public class FileInputSplit extends InputSplit implements Writable, Comparable {
+    private List<FileMetaData> fileMetaDataList;
+    private static final Logger LOG = LoggerFactory.getLogger(FileInputSplit.class);
     private long totalBytes;
 
-    public FileListInputSplit() {
+    public FileInputSplit() {
         this.fileMetaDataList = new ArrayList<>();
         this.totalBytes = 0;
     }
 
-    public List<FileListData> getFileMetaDataList() {
+    public List<FileMetaData> getFileMetaDataList() {
         return this.fileMetaDataList;
     }
 
@@ -51,7 +51,7 @@ public class FileListInputSplit extends InputSplit implements Writable, Comparab
             // write number of files
             dataOutput.writeLong(this.getLength());
 
-            for (FileListData fileMetaData : fileMetaDataList) {
+            for (FileMetaData fileMetaData : fileMetaDataList) {
                 // convert each filestatus (serializable) to byte array
                 fileMetaData.write(dataOutput);
             }
@@ -69,7 +69,7 @@ public class FileListInputSplit extends InputSplit implements Writable, Comparab
 
         fileMetaDataList = new ArrayList<>();
         for (long i = 0; i < numObjects; i++) {
-            FileListData metadata = readFileMetaData(dataInput);
+            FileMetaData metadata = readFileMetaData(dataInput);
             addFileMetadata(metadata);
         }
     }
@@ -101,7 +101,7 @@ public class FileListInputSplit extends InputSplit implements Writable, Comparab
      *
      * @param fileMetaData The file to be added.
      */
-    public void addFileMetadata(FileListData fileMetaData) {
+    public void addFileMetadata(FileMetaData fileMetaData) {
         fileMetaDataList.add(fileMetaData);
         totalBytes += fileMetaData.getFileSize();
     }
@@ -111,19 +111,19 @@ public class FileListInputSplit extends InputSplit implements Writable, Comparab
      */
     @Override
     public int compareTo(Object o) {
-        return Long.compare(getTotalBytes(), ((FileListInputSplit) o).getTotalBytes());
+        return Long.compare(getTotalBytes(), ((FileInputSplit) o).getTotalBytes());
     }
 
     /**
-     * This function deserializes FileListData from an input stream. Override this function if the metadata class
+     * This function deserializes FileMetaData from an input stream. Override this function if the metadata class
      * specific to the filesystem has its own deserialization method.
      *
      * @param dataInput The input stream we wish to deserialize from.
-     * @return Deserialized FileListData.
+     * @return Deserialized FileMetaData.
      * @throws IOException
      */
-    protected FileListData readFileMetaData(DataInput dataInput) throws IOException {
-        return new FileListData(dataInput);
+    protected FileMetaData readFileMetaData(DataInput dataInput) throws IOException {
+        return new FileMetaData(dataInput);
     }
 }
 

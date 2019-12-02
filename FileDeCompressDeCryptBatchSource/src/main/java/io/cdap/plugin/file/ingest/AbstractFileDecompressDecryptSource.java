@@ -32,14 +32,14 @@ import org.apache.hadoop.io.NullWritable;
 /**
  * Abstract class for FileCopySource plugin. Extracts metadata of desired files
  * from the source database.
- * @param <K> the FileListData class specific to each filesystem.
+ * @param <K> the FileMetaData class specific to each filesystem.
  */
-public abstract class AbstractFileListSource<K extends FileListData>
+public abstract class AbstractFileDecompressDecryptSource<K extends FileMetaData>
         extends ReferenceBatchSource<NullWritable, K, StructuredRecord> {
 
     private final AbstractFileMetadataSourceConfig config;
 
-    protected AbstractFileListSource(AbstractFileMetadataSourceConfig config) {
+    protected AbstractFileDecompressDecryptSource(AbstractFileMetadataSourceConfig config) {
         super(config);
         this.config = config;
     }
@@ -111,9 +111,9 @@ public abstract class AbstractFileListSource<K extends FileListData>
      * @param conf The configuration we wish to initialize.
      */
     protected void setDefaultConf(Configuration conf) {
-        FileListInputFormat.setSourcePaths(conf, config.sourcePaths);
-        FileListInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
-        FileListInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
+        FileInputFormat.setSourcePaths(conf, config.sourcePaths);
+        FileInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
+        FileInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
     }
 
     /*

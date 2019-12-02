@@ -36,14 +36,14 @@ import java.util.stream.Collectors;
  * metadata. The getsplit method creates splits according to user-set configuration and tries to
  * assign files to each split such that every split copies roughly the same number of bytes.
  */
-public class FileListInputFormat extends InputFormat {
+public class FileInputFormat extends InputFormat {
 
     protected static final String SOURCE_PATHS = "source.paths";
     protected static final String MAX_SPLIT_SIZE = "max.split.size";
     protected static final String FS_URI = "filesystem.uri";
     protected static final String RECURSIVE_COPY = "recursive.copy";
     protected static final int DEFAULT_MAX_SPLIT_SIZE = 128;
-    private static final Logger LOG = LoggerFactory.getLogger(FileListInputFormat.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileInputFormat.class);
 
     public static void setSourcePaths(Configuration conf, String value) {
         conf.set(SOURCE_PATHS, value);
@@ -61,7 +61,7 @@ public class FileListInputFormat extends InputFormat {
         conf.set(RECURSIVE_COPY, value);
     }
 
-    public FileListInputFormat() {
+    public FileInputFormat() {
         // no op
     }
 
@@ -69,7 +69,7 @@ public class FileListInputFormat extends InputFormat {
     public RecordReader createRecordReader(
             InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
             throws IOException, InterruptedException {
-        FileListRecordReader recordReader = new FileListRecordReader();
+        FileRecordReader recordReader = new FileRecordReader();
         recordReader.initialize(inputSplit, taskAttemptContext);
         return recordReader;
     }
@@ -104,7 +104,7 @@ public class FileListInputFormat extends InputFormat {
         }
 
         // scan the directories specified by the user
-        List<FileListData> fileMetaDataList = new ArrayList<>();
+        List<FileMetaData> fileMetaDataList = new ArrayList<>();
         for (String prefix : sourcePaths) {
             recursivelyAddFileStatus(
                     fileMetaDataList, prefix, new Path(prefix), recursive, fileSystem, conf);
@@ -120,16 +120,16 @@ public class FileListInputFormat extends InputFormat {
         // compute number of splits and instantiate the splits
         // We use a priority queue to keep track of the smallest split (fewest bytes assigned to it)
         int numSplits = (fileMetaDataList.size() - 1) / maxSplitSize + 1;
-        PriorityQueue<FileListInputSplit> abstractInputSplits = new PriorityQueue<>(numSplits);
+        PriorityQueue<FileInputSplit> abstractInputSplits = new PriorityQueue<>(numSplits);
         for (int i = 0; i < numSplits; i++) {
             abstractInputSplits.add(getInputSplit());
         }
 
         // assign each split approximately the same number of bytes (2-approx)
         List<InputSplit> inputSplits = new ArrayList<>();
-        for (FileListData fileMetadata : fileMetaDataList) {
+        for (FileMetaData fileMetadata : fileMetaDataList) {
             // remove the smallest split from the priority queue and add a new file to it
-            FileListInputSplit minInputSplit = abstractInputSplits.poll();
+            FileInputSplit minInputSplit = abstractInputSplits.poll();
             minInputSplit.addFileMetadata(fileMetadata);
 
             // if the inputsplit has number files more than maxSplitSize, we stop adding files to it
@@ -162,7 +162,7 @@ public class FileListInputFormat extends InputFormat {
      * @throws IOException
      */
     private void recursivelyAddFileStatus(
-            List<FileListData> fileMetadataList,
+            List<FileMetaData> fileMetadataList,
             String prefix,
             Path path,
             Boolean recursive,
@@ -186,29 +186,29 @@ public class FileListInputFormat extends InputFormat {
     }
 
     /**
-     * Returns an empty FileListInputSplit instance. Override this method to return an InputSplit
+     * Returns an empty FileInputSplit instance. Override this method to return an InputSplit
      * instance that works for your filesystem.
      *
-     * @return An empty FileListInputSplit instance.
+     * @return An empty FileInputSplit instance.
      */
-    protected FileListInputSplit getInputSplit() {
-        return new FileListInputSplit();
+    protected FileInputSplit getInputSplit() {
+        return new FileInputSplit();
     }
 
     /**
-     * Returns a FileListData given the FileStatus and soucePath. Override ths method to return a
-     * FileListData that contains additional credentials for your filesystem.
+     * Returns a FileMetaData given the FileStatus and soucePath. Override ths method to return a
+     * FileMetaData that contains additional credentials for your filesystem.
      *
      * @param fileStatus The FileStatus object that contains the raw metadata of the file
      * @param sourcePath The source path specified by the user that was used to obtain this
-     *     FileListData. Will be used to construct the relativePath field in FileListData.
+     *     FileMetaData. Will be used to construct the relativePath field in FileMetaData.
      * @param conf The user specified configuration that contains additional credentials required for
      *     accessing the source filesystem.
-     * @return A FileListData instance with its metadata fields populated
+     * @return A FileMetaData instance with its metadata fields populated
      * @throws IOException
      */
-    protected FileListData getFileMetadata(
+    protected FileMetaData getFileMetadata(
             FileStatus fileStatus, String sourcePath, Configuration conf) throws IOException {
-        return new FileListData(fileStatus, sourcePath);
+        return new FileMetaData(fileStatus, sourcePath);
     }
 }

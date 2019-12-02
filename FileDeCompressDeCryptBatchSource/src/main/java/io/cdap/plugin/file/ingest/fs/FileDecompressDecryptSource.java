@@ -31,9 +31,9 @@ import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.SourceInputFormatProvider;
 import io.cdap.plugin.common.batch.JobUtils;
-import io.cdap.plugin.file.ingest.AbstractFileListSource;
-import io.cdap.plugin.file.ingest.FileListData;
-import io.cdap.plugin.file.ingest.FileListInputFormat;
+import io.cdap.plugin.file.ingest.AbstractFileDecompressDecryptSource;
+import io.cdap.plugin.file.ingest.FileMetaData;
+import io.cdap.plugin.file.ingest.FileInputFormat;
 import io.cdap.plugin.file.ingest.util.FileUtil;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -48,14 +48,13 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URI;
 import java.security.NoSuchProviderException;
-import java.util.ArrayList;
 import java.util.List;
 
 /** FileCopySource plugin that pulls filemetadata from local filesystem or local HDFS. */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name("FileDecompressDecryptSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
-public class FileDecompressDecryptSource extends AbstractFileListSource<FileListData> {
+public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSource<FileMetaData> {
 
   private FileMetadataSourceConfig config;
 
@@ -83,7 +82,7 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
     setDefaultConf(conf);
     switch (config.scheme) {
       case "file":
-        FileListInputFormat.setURI(
+        FileInputFormat.setURI(
             conf, new URI(config.scheme, null, Path.SEPARATOR, null).toString());
         break;
       case "hdfs":
@@ -94,18 +93,18 @@ public class FileDecompressDecryptSource extends AbstractFileListSource<FileList
 
     context.setInput(
         Input.of(
-            config.referenceName, new SourceInputFormatProvider(FileListInputFormat.class, conf)));
+            config.referenceName, new SourceInputFormatProvider(FileInputFormat.class, conf)));
   }
 
   /**
-   * Converts the input FileListData to a StructuredRecord and emits it.
+   * Converts the input FileMetaData to a StructuredRecord and emits it.
    *
-   * @param input The input FileListData.
-   * @param emitter Emits StructuredRecord that contains FileListData.
+   * @param input The input FileMetaData.
+   * @param emitter Emits StructuredRecord that contains FileMetaData.
    */
   @Override
   public void transform(
-      KeyValue<NullWritable, FileListData> input, Emitter<StructuredRecord> emitter) {
+          KeyValue<NullWritable, FileMetaData> input, Emitter<StructuredRecord> emitter) {
     String filePath = input.getValue().getFullPath();
     String privateKeyFilePath = config.privateKeyFilePath;
     char[] privateKeyPassword = config.password.toCharArray(); // "passphrase";
