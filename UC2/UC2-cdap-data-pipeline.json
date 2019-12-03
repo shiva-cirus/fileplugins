@@ -1,0 +1,245 @@
+{
+    "name": "UC2",
+    "description": "Anonymize and Persist to GCS",
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "version": "6.0.0",
+        "scope": "SYSTEM"
+    },
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "File List Capturer",
+                "to": "File Anonymizer"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {},
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "name": "File List Capturer",
+                "plugin": {
+                    "name": "FileListSource",
+                    "type": "batchsource",
+                    "label": "File List Capturer",
+                    "artifact": {
+                        "name": "FileListSource",
+                        "version": "1.0.0",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "scheme": "hdfs",
+                        "recursiveCopy": "false",
+                        "sourcePaths": "${SOURCE_FILE_PATH}",
+                        "referenceName": "FL1",
+                        "maxSplitSize": "${SPLIT_SIZE}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"etlSchemaBody\",\"type\":\"record\",\"fields\":[{\"name\":\"fileName\",\"type\":\"string\"},{\"name\":\"fullPath\",\"type\":\"string\"},{\"name\":\"relativePath\",\"type\":\"string\"},{\"name\":\"hostURI\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsource",
+                "label": "File List Capturer",
+                "icon": "fa-plug",
+                "$$hashKey": "object:37",
+                "_uiPosition": {
+                    "left": "459px",
+                    "top": "225.5px"
+                },
+                "selected": false
+            },
+            {
+                "name": "File Anonymizer",
+                "plugin": {
+                    "name": "FileAnonymizerBatchSink",
+                    "type": "batchsink",
+                    "label": "File Anonymizer",
+                    "artifact": {
+                        "name": "Anonymizer",
+                        "version": "1.0.0",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "format": "CSV",
+                        "ignoreHeader": "Yes",
+                        "project": "${GCS_PROJECT_ID}",
+                        "suffix": "yyyy-MM-dd-HH-mm",
+                        "serviceFilePath": "${GCS_SERVICEACCOUNT_JSON_FILE}",
+                        "bufferSize": "1024",
+                        "fieldList": "${FIELD_LIST}",
+                        "policyUrl": "${POLICY_URL}",
+                        "identity": "${IDENTITY}",
+                        "sharedSecret": "${SHARED_SECRET}",
+                        "trustStorePath": "${TRUST_STORE_PATH}",
+                        "cachePath": "${CACHE_PATH}",
+                        "path": "${GCS_BUCKETNAME_PATH}",
+                        "proxyType": "NONE"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"etlSchemaBody\",\"type\":\"record\",\"fields\":[{\"name\":\"fileName\",\"type\":\"string\"},{\"name\":\"fullPath\",\"type\":\"string\"},{\"name\":\"relativePath\",\"type\":\"string\"},{\"name\":\"hostURI\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "File List Capturer",
+                        "schema": "{\"name\":\"etlSchemaBody\",\"type\":\"record\",\"fields\":[{\"name\":\"fileName\",\"type\":\"string\"},{\"name\":\"fullPath\",\"type\":\"string\"},{\"name\":\"relativePath\",\"type\":\"string\"},{\"name\":\"hostURI\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsink",
+                "label": "File Anonymizer",
+                "icon": "fa-plug",
+                "$$hashKey": "object:38",
+                "_uiPosition": {
+                    "left": "759px",
+                    "top": "225.5px"
+                },
+                "_backendProperties": {
+                    "format": {
+                        "name": "format",
+                        "description": "Specify the file format",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": false,
+                        "macroEscapingEnabled": false
+                    },
+                    "proxyType": {
+                        "name": "proxyType",
+                        "description": "Specify the Proxy Type. None - No Proxy , HTTP - Proxy for HTTP , SOCKS - Low level Proxy",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": false,
+                        "macroEscapingEnabled": false
+                    },
+                    "project": {
+                        "name": "project",
+                        "description": "Google Cloud Project ID, which uniquely identifies a project. It can be found on the Dashboard in the Google Cloud Platform Console.",
+                        "type": "string",
+                        "required": false,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "suffix": {
+                        "name": "suffix",
+                        "description": "The time format for the output directory that will be appended to the path. For example, the format 'yyyy-MM-dd-HH-mm' will result in a directory of the form '2015-01-01-20-42'. If not specified, nothing will be appended to the path.",
+                        "type": "string",
+                        "required": false,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "ignoreHeader": {
+                        "name": "ignoreHeader",
+                        "description": "Specify if header row is to be ignored or not",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": false,
+                        "macroEscapingEnabled": false
+                    },
+                    "path": {
+                        "name": "path",
+                        "description": "The path to write to. For example, gs://<bucket>",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "policyUrl": {
+                        "name": "policyUrl",
+                        "description": "Specify the Policy Url",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "proxy": {
+                        "name": "proxy",
+                        "description": "The proxy to be used. If none specified it will make a direct connection or through the proxy set at the environment level.",
+                        "type": "string",
+                        "required": false,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "identity": {
+                        "name": "identity",
+                        "description": "Specify the Identity",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "serviceFilePath": {
+                        "name": "serviceFilePath",
+                        "description": "Path on the local file system of the service account key used for authorization. Can be set to 'auto-detect' when running on a Dataproc cluster. When running on other clusters, the file must be present on every node in the cluster.",
+                        "type": "string",
+                        "required": false,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "cachePath": {
+                        "name": "cachePath",
+                        "description": "Specify the Cache Path",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "trustStorePath": {
+                        "name": "trustStorePath",
+                        "description": "Specify the Trust Store Path",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "sharedSecret": {
+                        "name": "sharedSecret",
+                        "description": "Specify the Shared Secret",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    },
+                    "fieldList": {
+                        "name": "fieldList",
+                        "description": "Specify the field, anonymization flag and anonymization format combination. Format is <field>:<anonymize-flag>:<anonymize-format>[,<field>:<anonymize-flag>:<anonymize-format>]*",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": false,
+                        "macroEscapingEnabled": false
+                    },
+                    "bufferSize": {
+                        "name": "bufferSize",
+                        "description": "Buffer size to read the contents. The default is 1024",
+                        "type": "string",
+                        "required": true,
+                        "macroSupported": true,
+                        "macroEscapingEnabled": false
+                    }
+                },
+                "description": "File Anonymize and Persist to GCS.",
+                "selected": false
+            }
+        ],
+        "schedule": "0 * * * *",
+        "engine": "mapreduce",
+        "numOfRecordsPreview": 100,
+        "description": "Data Pipeline Application",
+        "maxConcurrentRuns": 1
+    }
+}

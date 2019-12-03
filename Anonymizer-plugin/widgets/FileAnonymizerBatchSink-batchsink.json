@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "spec-version": "1.0"
+  },
+  "display-name": "File Anonymizer",
+  "configuration-groups": [
+    {
+      "label": "Anonymization Configuration",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Policy URL",
+          "name": "policyUrl"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Identity",
+          "name": "identity"
+        },
+        {
+          "widget-type": "password",
+          "label": "Shared Secret",
+          "name": "sharedSecret"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Trust Store Path",
+          "name": "trustStorePath"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Cache Path",
+          "name": "cachePath"
+        }
+      ]
+    },
+    {
+      "label": "File Structure",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "File Format",
+          "name": "format",
+          "widget-attributes": {
+            "values": [
+              "CSV"
+            ],
+            "default": "CSV"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Ignore Header Row",
+          "name": "ignoreHeader",
+          "widget-attributes": {
+            "values": [
+              "Yes",
+              "No"
+            ],
+            "default": "No"
+          }
+        },
+        {
+          "name": "fieldList",
+          "label": "Anonymize Fields",
+          "widget-type": "ds-multiplevalues",
+          "widget-attributes": {
+            "delimiter": ",",
+            "values-delimiter": ":",
+            "numValues": "3",
+            "placeholders": [
+              "Input Field",
+              "Anonymize (Yes/No)",
+              "Anonymize Format (SSN/CC)"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "Google Cloud Storage Parameters",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Project ID",
+          "name": "project",
+          "widget-attributes": {
+            "default": "auto-detect"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Path",
+          "name": "path",
+          "widget-attributes": {
+            "placeholder": "gs://<bucket>/path/to/output"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Path Suffix",
+          "name": "suffix",
+          "widget-attributes": {
+            "default": "yyyy-MM-dd-HH-mm"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Proxy Type",
+          "name": "proxyType",
+          "widget-attributes": {
+            "values": [
+              "SOCKS",
+              "HTTP",
+              "NONE"
+            ],
+            "default": "NONE"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Proxy Connection",
+          "name": "proxy",
+          "widget-attributes" : {
+            "placeholder": "host:port"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Google Cloud Storage Credentials",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Service Account File Path",
+          "name": "serviceFilePath",
+          "widget-attributes": {
+            "default": "auto-detect"
+          }
+        }
+      ]
+    },
+    {
+      "label": "General",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Buffer Size",
+          "name": "bufferSize",
+          "widget-attributes": {
+            "default": "1024"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": []
+}
