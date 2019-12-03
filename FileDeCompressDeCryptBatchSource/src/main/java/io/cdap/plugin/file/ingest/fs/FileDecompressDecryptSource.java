@@ -32,8 +32,8 @@ import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.SourceInputFormatProvider;
 import io.cdap.plugin.common.batch.JobUtils;
 import io.cdap.plugin.file.ingest.AbstractFileDecompressDecryptSource;
-import io.cdap.plugin.file.ingest.FileMetaData;
 import io.cdap.plugin.file.ingest.FileInputFormat;
+import io.cdap.plugin.file.ingest.FileMetaData;
 import io.cdap.plugin.file.ingest.util.FileUtil;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -43,11 +43,15 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.bouncycastle.openpgp.PGPException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URI;
 import java.security.NoSuchProviderException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.List;
 
 /** FileCopySource plugin that pulls filemetadata from local filesystem or local HDFS. */
@@ -55,7 +59,7 @@ import java.util.List;
 @Name("FileDecompressDecryptSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
 public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSource<FileMetaData> {
-
+  private static final Logger LOG = LoggerFactory.getLogger(FileDecompressDecryptSource.class);
   private FileMetadataSourceConfig config;
 
   public FileDecompressDecryptSource(FileMetadataSourceConfig config) {
@@ -82,8 +86,7 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
     setDefaultConf(conf);
     switch (config.scheme) {
       case "file":
-        FileInputFormat.setURI(
-            conf, new URI(config.scheme, null, Path.SEPARATOR, null).toString());
+        FileInputFormat.setURI(conf, new URI(config.scheme, null, Path.SEPARATOR, null).toString());
         break;
       case "hdfs":
         break;
@@ -92,8 +95,7 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
     }
 
     context.setInput(
-        Input.of(
-            config.referenceName, new SourceInputFormatProvider(FileInputFormat.class, conf)));
+        Input.of(config.referenceName, new SourceInputFormatProvider(FileInputFormat.class, conf)));
   }
 
   /**
@@ -104,7 +106,7 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
    */
   @Override
   public void transform(
-          KeyValue<NullWritable, FileMetaData> input, Emitter<StructuredRecord> emitter) {
+      KeyValue<NullWritable, FileMetaData> input, Emitter<StructuredRecord> emitter) {
     String filePath = input.getValue().getFullPath();
     String privateKeyFilePath = config.privateKeyFilePath;
     char[] privateKeyPassword = config.password.toCharArray(); // "passphrase";
@@ -149,20 +151,59 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
   }
   /** Converts to a StructuredRecord */
   public StructuredRecord toRecord(CSVRecord csvRecord) {
-
+    StructuredRecord structuredRecord = null;
     // merge default schema and credential schema to create output schema
-    Schema outputSchema;
-    List<Schema.Field> fieldList = config.getSchema().getFields();
-    outputSchema = Schema.recordOf("metadata", fieldList);
+    try {
+      Schema outputSchema;
+      List<Schema.Field> fieldList = config.getSchema().getFields();
+      outputSchema = Schema.recordOf("metadata", fieldList);
 
-    StructuredRecord.Builder outputBuilder = StructuredRecord.builder(outputSchema);
+      StructuredRecord.Builder outputBuilder = StructuredRecord.builder(outputSchema);
 
-    fieldList.forEach(
-        field -> {
-          outputBuilder.set(field.getName(), csvRecord.get(field.getName()));
-        });
+      fieldList.forEach(
+          field -> {
+            String schema = field.getSchema().getType().name();
+            String value = csvRecord.get(field.getName());
+            if (schema.equalsIgnoreCase("INT")) {
+              outputBuilder.set(field.getName(), Integer.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("LONG")) {
+              outputBuilder.set(field.getName(), Integer.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("STRING")) {
+              outputBuilder.set(field.getName(), value);
+            }
+            if (schema.equalsIgnoreCase("BOOLEAN")) {
+              outputBuilder.set(field.getName(), Boolean.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("BYTES")) {
+              outputBuilder.set(field.getName(), value.getBytes());
+            }
+            if (schema.equalsIgnoreCase("DOUBLE")) {
+              outputBuilder.set(field.getName(), Double.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("DECIMAL")) {
+              outputBuilder.set(field.getName(), Double.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("FLOAT")) {
+              outputBuilder.set(field.getName(), Float.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("TIME")) {
+              outputBuilder.set(field.getName(), Time.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("TIMESTAMP")) {
+              outputBuilder.set(field.getName(), Timestamp.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("TIMESTAMP")) {
+              outputBuilder.set(field.getName(), Timestamp.valueOf(value));
+            }
+          });
+      structuredRecord = outputBuilder.build();
+    } catch (Exception e) {
+      LOG.error(" Error parsing CSV data {} ", e);
+    }
 
-    return outputBuilder.build();
+    return structuredRecord;
   }
   /** Configurations required for connecting to local filesystems. */
   public class FileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
