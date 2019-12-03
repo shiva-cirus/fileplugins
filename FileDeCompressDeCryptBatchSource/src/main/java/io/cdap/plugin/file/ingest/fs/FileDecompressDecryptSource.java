@@ -53,6 +53,7 @@ import java.security.NoSuchProviderException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 /** FileCopySource plugin that pulls filemetadata from local filesystem or local HDFS. */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
@@ -122,7 +123,11 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
           inputFileStream = FileUtil.decrypt(filePath, privateKeyFilePath, privateKeyPassword);
         }
       } else {
-        inputFileStream = new FileInputStream(filePath);
+        if (decompress) {
+          inputFileStream = new GZIPInputStream(new FileInputStream(filePath));
+        } else {
+          inputFileStream = new FileInputStream(filePath);
+        }
       }
 
       InputStreamReader isReader = new InputStreamReader(inputFileStream);
