@@ -110,18 +110,6 @@
       "properties": [
         {
           "widget-type": "select",
-          "label": "DeCompression Format",
-          "name": "decompressionFormat",
-          "widget-attributes": {
-            "values": [
-              "ZIP",
-              "NONE"
-            ],
-            "default": "ZIP"
-          }
-        },
-        {
-          "widget-type": "select",
           "label": "Decompress File",
           "name": "decompress",
           "widget-attributes": {
@@ -130,6 +118,18 @@
               "false"
             ],
             "default": "true"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "DeCompression Format",
+          "name": "decompressionFormat",
+          "widget-attributes": {
+            "values": [
+              "ZIP",
+              "NONE"
+            ],
+            "default": "ZIP"
           }
         }
       ]
@@ -145,11 +145,7 @@
           "type": "record",
           "fields": [
             {
-              "name": "offset",
-              "type": "long"
-            },
-            {
-              "name": "body",
+              "name": "csv_body",
               "type": "string"
             }
           ]
