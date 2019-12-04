@@ -21,7 +21,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -38,9 +37,7 @@ import java.util.zip.ZipFile;
 public class FileRecordReader extends RecordReader<Long, CSVRecord> {
 
   protected FileInputSplit split;
-  private int currentIndex;
   private long rowIdx;
-  private int lastRowNum;
   private InputStream inputFileStream;
   private InputStreamReader isReader;
   private BufferedReader reader;
@@ -65,7 +62,7 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
 
   @Override
   public float getProgress() throws IOException, InterruptedException {
-    return rowIdx/rowIdx;
+    return rowIdx / rowIdx;
   }
 
   @Override
@@ -116,7 +113,6 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
     } catch (PGPException e) {
       e.printStackTrace();
     }
-    this.currentIndex = -1;
   }
 
   @Override
