@@ -159,9 +159,6 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
             if (schema.equalsIgnoreCase("TIMESTAMP")) {
               outputBuilder.set(field.getName(), Timestamp.valueOf(value));
             }
-            if (schema.equalsIgnoreCase("TIMESTAMP")) {
-              outputBuilder.set(field.getName(), Timestamp.valueOf(value));
-            }
           });
       structuredRecord = outputBuilder.build();
     } catch (Exception e) {
