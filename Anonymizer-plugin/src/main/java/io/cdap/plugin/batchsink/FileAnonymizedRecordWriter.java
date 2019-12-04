@@ -175,18 +175,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         try {
             LOG.debug("In initialize");
             //System.setProperty("java.library.path", "/opt/DA/javasimpleapi/lib");
-            /*
-            LOG.info("Print all default System Properties as seen by Plugin");
-            Properties p = System.getProperties();
-            Enumeration keys = p.keys();
-            while (keys.hasMoreElements()) {
-                String key = (String) keys.nextElement();
-                String value = (String) p.get(key);
-                LOG.info(key + " : " + value);
-            }
-            */
-
             //LOG.info("java.library.path = {}", "/opt/DA/javasimpleapi/lib");
+
             Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
             fieldSysPath.setAccessible(true);
             fieldSysPath.set(null, null);
@@ -196,24 +186,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
             // Print the API version
             LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
-
-            // Sample configuration
-            /*
-            https://voltage-pp-0000.dataprotection.voltage.com/policy/clientPolicy.xml
-            accounts22@dataprotection.voltage.com
-            voltage123
-
-            /opt/DA/javasimpleapi/trustStore
-            /opt/DA/javasimpleapi/cache
-
-            /opt/cdap-test-data/csv/
-
-            midyear-courage-256620
-
-            gs://shiva-cirus-test/disttest/
-
-            /opt/cdap-test-data/midyear-courage-256620-0b0bc77ed7d8.json
-            */
 
             policyUrl = conf.get(FileAnonymizedOutputFormat.NAME_POLICY_URL, null);
             LOG.info("Policy URL - " + policyUrl);
