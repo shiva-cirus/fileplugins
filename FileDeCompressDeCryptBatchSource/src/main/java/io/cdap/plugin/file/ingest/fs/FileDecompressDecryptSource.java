@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.URI;
+import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
@@ -130,6 +131,9 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
             }
             if (schema.equalsIgnoreCase("LONG")) {
               outputBuilder.set(field.getName(), Integer.valueOf(value));
+            }
+            if (schema.equalsIgnoreCase("DATE")) {
+              outputBuilder.set(field.getName(), Date.valueOf(value));
             }
             if (schema.equalsIgnoreCase("STRING")) {
               outputBuilder.set(field.getName(), value);
