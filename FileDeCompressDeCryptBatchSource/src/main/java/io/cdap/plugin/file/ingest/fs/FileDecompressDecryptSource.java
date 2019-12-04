@@ -33,35 +33,25 @@ import io.cdap.plugin.common.SourceInputFormatProvider;
 import io.cdap.plugin.common.batch.JobUtils;
 import io.cdap.plugin.file.ingest.AbstractFileDecompressDecryptSource;
 import io.cdap.plugin.file.ingest.FileInputFormat;
-import io.cdap.plugin.file.ingest.FileMetaData;
-import io.cdap.plugin.file.ingest.util.FileUtil;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
-import org.bouncycastle.openpgp.PGPException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.*;
 import java.net.URI;
-import java.security.NoSuchProviderException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /** FileCopySource plugin that pulls filemetadata from local filesystem or local HDFS. */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name("FileDecompressDecryptSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
-public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSource<FileMetaData> {
+public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSource<CSVRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(FileDecompressDecryptSource.class);
   private FileMetadataSourceConfig config;
 
@@ -84,6 +74,11 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
     super.prepareRun(context);
     Job job = JobUtils.createInstance();
     Configuration conf = job.getConfiguration();
+
+    conf.setBoolean("decrypt", config.decrypt);
+    conf.setBoolean("decompress", config.decompress);
+    conf.set("privateKeyFilePath", config.privateKeyFilePath);
+    conf.set("password", config.password);
 
     // initialize configurations
     setDefaultConf(conf);
@@ -109,55 +104,8 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
    */
   @Override
   public void transform(
-      KeyValue<NullWritable, FileMetaData> input, Emitter<StructuredRecord> emitter) {
-    String filePath = input.getValue().getFullPath();
-    String privateKeyFilePath = config.privateKeyFilePath;
-    char[] privateKeyPassword = config.password.toCharArray(); // "passphrase";
-    Boolean decrypt = config.decrypt;
-    Boolean decompress = config.decompress;
-    InputStream inputFileStream = null;
-    try {
-      if (decrypt) {
-        if (decompress) {
-          inputFileStream =
-              FileUtil.decryptAndDecompress(filePath, privateKeyFilePath, privateKeyPassword);
-        } else {
-          inputFileStream = FileUtil.decrypt(filePath, privateKeyFilePath, privateKeyPassword);
-        }
-      } else {
-        if (decompress) {
-          ZipFile zf = new ZipFile(filePath);
-          Enumeration entries = zf.entries();
-          ZipEntry ze = (ZipEntry) entries.nextElement();
-          inputFileStream = zf.getInputStream(ze);
-        } else {
-          inputFileStream = new FileInputStream(filePath);
-        }
-      }
-
-      InputStreamReader isReader = new InputStreamReader(inputFileStream);
-      // Creating a BufferedReader object
-      BufferedReader reader = new BufferedReader(isReader);
-
-      CSVParser csvParser =
-          new CSVParser(
-              reader,
-              CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
-      for (CSVRecord csvRecord : csvParser) {
-        emitter.emit(toRecord(csvRecord));
-      }
-
-      inputFileStream.close();
-      isReader.close();
-      reader.close();
-
-    } catch (IOException e) {
-      e.printStackTrace();
-    } catch (NoSuchProviderException e) {
-      e.printStackTrace();
-    } catch (PGPException e) {
-      e.printStackTrace();
-    }
+      KeyValue<NullWritable, CSVRecord> input, Emitter<StructuredRecord> emitter) {
+    emitter.emit(toRecord(input.getValue()));
   }
   /** Converts to a StructuredRecord */
   public StructuredRecord toRecord(CSVRecord csvRecord) {
@@ -172,7 +120,7 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
 
       fieldList.forEach(
           field -> {
-            String schema = field.getSchema().getLogicalType().name();
+            String schema = field.getSchema().getType().name();
             String value = csvRecord.get(field.getName());
             if (schema.equalsIgnoreCase("INT")) {
               outputBuilder.set(field.getName(), Integer.valueOf(value));

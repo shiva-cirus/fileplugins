@@ -26,6 +26,7 @@ import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.ReferenceBatchSource;
 import io.cdap.plugin.common.ReferencePluginConfig;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 
@@ -34,7 +35,7 @@ import org.apache.hadoop.io.NullWritable;
  * from the source database.
  * @param <K> the FileMetaData class specific to each filesystem.
  */
-public abstract class AbstractFileDecompressDecryptSource<K extends FileMetaData>
+public abstract class AbstractFileDecompressDecryptSource<K extends CSVRecord>
         extends ReferenceBatchSource<NullWritable, K, StructuredRecord> {
 
     private final AbstractFileMetadataSourceConfig config;
