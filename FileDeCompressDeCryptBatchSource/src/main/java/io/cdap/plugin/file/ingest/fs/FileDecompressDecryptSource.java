@@ -172,7 +172,7 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
 
       fieldList.forEach(
           field -> {
-            String schema = field.getSchema().getType().name();
+            String schema = field.getSchema().getLogicalType().name();
             String value = csvRecord.get(field.getName());
             if (schema.equalsIgnoreCase("INT")) {
               outputBuilder.set(field.getName(), Integer.valueOf(value));
