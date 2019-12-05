@@ -76,8 +76,8 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
     Job job = JobUtils.createInstance();
     Configuration conf = job.getConfiguration();
 
-    conf.set("decryptionAlgorithm", config.decryptionAlgorithm);
-    conf.set("decompressionFormat", config.decompressionFormat);
+    conf.setBoolean("decrypt", config.decrypt);
+    conf.setBoolean("decompress", config.decompress);
     conf.set("privateKeyFilePath", config.privateKeyFilePath);
     conf.set("password", config.password);
 
@@ -192,6 +192,12 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
     @Description("File  Format ")
     public String format;
 
+    @Description("File to be Decrypted or not")
+    public Boolean decrypt;
+
+    @Description("File to be decompress or not")
+    public Boolean decompress;
+
     @Nullable
     @Description(
         "Output schema for the source. Formats like 'avro' and 'parquet' require a schema in order to "
@@ -209,8 +215,14 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
       }
     }
 
-    public FileMetadataSourceConfig(String name, String sourcePaths, Integer maxSplitSize) {
+    public FileMetadataSourceConfig(
+        String name, String sourcePaths, Integer maxSplitSize, String scheme) {
       super(name, sourcePaths, maxSplitSize);
+      this.scheme = scheme;
+      this.privateKeyFilePath = privateKeyFilePath;
+      this.password = password;
+      this.decrypt = decrypt;
+      this.decompress = decompress;
     }
   }
 }

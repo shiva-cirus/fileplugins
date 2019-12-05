@@ -72,41 +72,40 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
     Configuration configuration = taskAttemptContext.getConfiguration();
     String filePath = this.split.getFileMetaDataList().get(0).getFullPath();
     String privateKeyFilePath = configuration.get("privateKeyFilePath");
-    char[] privateKeyPassword = configuration.get("password").toCharArray();
-    String decryptionAlgorithm = configuration.get("decryptionAlgorithm");
-    String decompressionFormat = configuration.get("decompressionFormat");
+    char[] privateKeyPassword = configuration.get("password").toCharArray(); // "passphrase";
+    Boolean decrypt = configuration.getBoolean("decrypt", false);
+    Boolean decompress = configuration.getBoolean("decompress", false);
     try {
-      if (decryptionAlgorithm.equalsIgnoreCase("PGP")) {
-        if (decompressionFormat.equalsIgnoreCase("ZIP")) {
+      if (decrypt) {
+        if (decompress) {
           inputFileStream =
               FileUtil.decryptAndDecompress(filePath, privateKeyFilePath, privateKeyPassword);
-        } else if (decompressionFormat.equalsIgnoreCase("NONE")) {
+        } else {
           inputFileStream = FileUtil.decrypt(filePath, privateKeyFilePath, privateKeyPassword);
         }
-      } else if (decryptionAlgorithm.equalsIgnoreCase("NONE")) {
-        if (decompressionFormat.equalsIgnoreCase("ZIP")) {
+      } else {
+        if (decompress) {
           ZipFile zf = new ZipFile(filePath);
           Enumeration entries = zf.entries();
           ZipEntry ze = (ZipEntry) entries.nextElement();
           inputFileStream = zf.getInputStream(ze);
-        } else if (decompressionFormat.equalsIgnoreCase("NONE")) {
-          {
-            inputFileStream = new FileInputStream(filePath);
-          }
+        } else {
+          inputFileStream = new FileInputStream(filePath);
         }
-
-        isReader = new InputStreamReader(inputFileStream);
-        // Creating a BufferedReader object
-        reader = new BufferedReader(isReader);
-
-        CSVParser csvParser =
-            new CSVParser(
-                reader,
-                CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
-
-        rows = csvParser.iterator();
-        rowIdx = 0;
       }
+
+      isReader = new InputStreamReader(inputFileStream);
+      // Creating a BufferedReader object
+      reader = new BufferedReader(isReader);
+
+      CSVParser csvParser =
+          new CSVParser(
+              reader,
+              CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
+
+      rows = csvParser.iterator();
+      rowIdx = 0;
+
     } catch (IOException e) {
       e.printStackTrace();
     } catch (NoSuchProviderException e) {
