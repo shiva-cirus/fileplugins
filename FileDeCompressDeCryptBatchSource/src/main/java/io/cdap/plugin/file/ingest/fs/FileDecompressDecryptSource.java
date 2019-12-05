@@ -29,9 +29,9 @@ import io.cdap.cdap.etl.api.Emitter;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.common.SourceInputFormatProvider;
 import io.cdap.plugin.common.batch.JobUtils;
-import io.cdap.plugin.file.ingest.AbstractFileDecompressDecryptSource;
 import io.cdap.plugin.file.ingest.FileInputFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
@@ -52,12 +52,12 @@ import java.util.List;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name("FileDecompressDecryptSource")
 @Description("Reads file metadata from local filesystem or local HDFS.")
-public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSource<CSVRecord> {
+public class FileDecompressDecryptSource
+    extends BatchSource<NullWritable, CSVRecord, StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(FileDecompressDecryptSource.class);
   private FileMetadataSourceConfig config;
 
   public FileDecompressDecryptSource(FileMetadataSourceConfig config) {
-    super(config);
     this.config = config;
   }
 
@@ -72,7 +72,6 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
 
   @Override
   public void prepareRun(BatchSourceContext context) throws Exception {
-    super.prepareRun(context);
     Job job = JobUtils.createInstance();
     Configuration conf = job.getConfiguration();
 
@@ -167,8 +166,25 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
 
     return structuredRecord;
   }
+
+  protected void setDefaultConf(Configuration conf) {
+    FileInputFormat.setSourcePaths(conf, config.sourcePaths);
+    FileInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
+    FileInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
+  }
   /** Configurations required for connecting to local filesystems. */
-  public class FileMetadataSourceConfig extends AbstractFileMetadataSourceConfig {
+  public class FileMetadataSourceConfig extends ReferencePluginConfig {
+
+    @Macro
+    @Description("Collection of sourcePaths separated by \",\" to read files from")
+    public String sourcePaths;
+
+    @Macro
+    @Description("The number of files each split reads in")
+    public Integer maxSplitSize;
+
+    @Description("Whether or not to copy recursively")
+    public Boolean recursiveCopy;
 
     public static final String NAME_SCHEMA = "schema";
 
@@ -217,12 +233,22 @@ public class FileDecompressDecryptSource extends AbstractFileDecompressDecryptSo
 
     public FileMetadataSourceConfig(
         String name, String sourcePaths, Integer maxSplitSize, String scheme) {
-      super(name, sourcePaths, maxSplitSize);
+      super(name);
+      this.sourcePaths = sourcePaths;
+      this.maxSplitSize = maxSplitSize;
       this.scheme = scheme;
       this.privateKeyFilePath = privateKeyFilePath;
       this.password = password;
       this.decrypt = decrypt;
       this.decompress = decompress;
+    }
+
+    public void validate() {
+      if (!this.containsMacro("maxSplitSize")) {
+        if (maxSplitSize <= 0) {
+          throw new IllegalArgumentException("Max split size must be a positive integer.");
+        }
+      }
     }
   }
 }
