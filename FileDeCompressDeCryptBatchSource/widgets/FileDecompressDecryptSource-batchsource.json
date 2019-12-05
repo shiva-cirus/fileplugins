@@ -76,7 +76,8 @@
           "name": "decryptionAlgorithm",
           "widget-attributes": {
             "values": [
-              "PGP"
+              "PGP",
+              "NONE"
             ],
             "default": "PGP"
           }
