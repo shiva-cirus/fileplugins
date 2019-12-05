@@ -39,6 +39,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.sql.Date;
 import java.sql.Time;
@@ -140,15 +141,15 @@ public class FileDecompressDecryptSource
               outputBuilder.set(field.getName(), Double.valueOf(value));
             }
             if (schema.equalsIgnoreCase("DECIMAL")) {
-              outputBuilder.set(field.getName(), Double.valueOf(value));
+              outputBuilder.setDecimal(field.getName(), new BigDecimal(value));
             }
             if (schema.equalsIgnoreCase("FLOAT")) {
               outputBuilder.set(field.getName(), Float.valueOf(value));
             }
-            if (schema.equalsIgnoreCase("TIME")) {
+            if (schema.equalsIgnoreCase("TIME_MICROS")) {
               outputBuilder.set(field.getName(), Time.valueOf(value));
             }
-            if (schema.equalsIgnoreCase("TIMESTAMP")) {
+            if (schema.equalsIgnoreCase("TIMESTAMP_MICROS")) {
               outputBuilder.set(field.getName(), Timestamp.valueOf(value));
             }
           });
