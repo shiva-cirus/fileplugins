@@ -33,6 +33,7 @@ import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.common.SourceInputFormatProvider;
 import io.cdap.plugin.common.batch.JobUtils;
 import io.cdap.plugin.file.ingest.FileInputFormat;
+import io.cdap.plugin.file.ingest.config.FileDecompressDecryptSourceConfig;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -55,9 +56,9 @@ import java.util.List;
 public class FileDecompressDecryptSource
     extends BatchSource<NullWritable, CSVRecord, StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(FileDecompressDecryptSource.class);
-  private FileMetadataSourceConfig config;
+  private FileDecompressDecryptSourceConfig config;
 
-  public FileDecompressDecryptSource(FileMetadataSourceConfig config) {
+  public FileDecompressDecryptSource(FileDecompressDecryptSourceConfig config) {
     this.config = config;
   }
 
@@ -172,83 +173,5 @@ public class FileDecompressDecryptSource
     FileInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
     FileInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
   }
-  /** Configurations required for connecting to local filesystems. */
-  public class FileMetadataSourceConfig extends ReferencePluginConfig {
 
-    @Macro
-    @Description("Collection of sourcePaths separated by \",\" to read files from")
-    public String sourcePaths;
-
-    @Macro
-    @Description("The number of files each split reads in")
-    public Integer maxSplitSize;
-
-    @Description("Whether or not to copy recursively")
-    public Boolean recursiveCopy;
-
-    public static final String NAME_SCHEMA = "schema";
-
-    @Description("Scheme of the source filesystem.")
-    public String scheme;
-
-    @Macro
-    @Description("Private key File Path.")
-    public String privateKeyFilePath;
-
-    @Macro
-    @Description("Password of the private key")
-    public String password;
-
-    @Description("Decompression Format")
-    public String decompressionFormat;
-
-    @Description("Decryption Algorithm ")
-    public String decryptionAlgorithm;
-
-    @Description("File  Format ")
-    public String format;
-
-    @Description("File to be Decrypted or not")
-    public Boolean decrypt;
-
-    @Description("File to be decompress or not")
-    public Boolean decompress;
-
-    @Nullable
-    @Description(
-        "Output schema for the source. Formats like 'avro' and 'parquet' require a schema in order to "
-            + "read the data.")
-    private String schema;
-
-    @Nullable
-    public Schema getSchema() {
-      try {
-        return containsMacro(NAME_SCHEMA) || Strings.isNullOrEmpty(schema)
-            ? null
-            : Schema.parseJson(schema);
-      } catch (Exception e) {
-        throw new IllegalArgumentException("Invalid schema: " + e.getMessage(), e);
-      }
-    }
-
-    public FileMetadataSourceConfig(
-        String name, String sourcePaths, Integer maxSplitSize, String scheme) {
-      super(name);
-      this.sourcePaths = sourcePaths;
-      this.maxSplitSize = maxSplitSize;
-      this.scheme = scheme;
-      this.privateKeyFilePath = privateKeyFilePath;
-      this.password = password;
-      this.decrypt = decrypt;
-      this.decompress = decompress;
-    }
-
-    public void validate() {
-      if (!this.containsMacro("maxSplitSize")) {
-        if (maxSplitSize <= 0) {
-          throw new IllegalArgumentException("Max split size must be a positive integer.");
-        }
-      }
-    }
-  }
 }
