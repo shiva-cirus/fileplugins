@@ -161,23 +161,24 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
 
         // Create GCS Storage using the credentials
-        storage = getGoogleStorage(gcsserviceaccountjson, project, proxy,proxytype,useProxy);
-        if (storage == null){
+        storage = getGoogleStorage(gcsserviceaccountjson, project, proxytype, useProxy);
+        if (storage == null) {
             LOG.error("Unable to connect to Google Services. ");
             throw new IOException("Unable to connect to Google Services. ");
         }
         LOG.info("Created GCS Storage");
         bucket = getBucket(storage, bucketname);
-        if (bucket == null){
-            LOG.error("Unable to create or get bucket "+bucketname);
-            throw new IOException("Unable to create or get bucket "+bucketname);
+        if (bucket == null) {
+            LOG.error("Unable to create or get bucket " + bucketname);
+            throw new IOException("Unable to create or get bucket " + bucketname);
         }
 
         LOG.info("Created GCS Bucket");
     }
 
     private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return new FileMetaData(uri + '/' + filePath, conf);
+        LOG.debug("getFileMetaData: uri={}, filePath={}", uri, filePath);
+        return new FileMetaData(filePath, uri, conf);
     }
 
     private void extractHostAndPortFromProxy() {
@@ -193,11 +194,11 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
         }
     }
 
-    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxy, String proxytype, Boolean useProxy) {
+    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxytype, Boolean useProxy) {
 
         HttpTransportFactory transportFactory = null;
         Credentials credentials = null;
-        TransportOptions transportOptions=null;
+        TransportOptions transportOptions = null;
         StorageOptions.Builder builder = null;
 
         if (useProxy) {
@@ -207,7 +208,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
             LOG.info("Proxy Port - " + proxyPort);
 
 
-             transportFactory = new HttpTransportFactory() {
+            transportFactory = new HttpTransportFactory() {
 
                 @Override
                 public HttpTransport create() {
@@ -219,13 +220,13 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
                     }
                 }
             };
-             transportOptions = HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build();
+            transportOptions = HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory).build();
         }
 
         if (useProxy) {
 
             try {
-                credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON),transportFactory);
+                credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON), transportFactory);
                 builder = StorageOptions.newBuilder()
                         .setCredentials(credentials)
                         .setProjectId(project)
@@ -236,7 +237,7 @@ public class FileCopyRecordWriter extends RecordWriter<NullWritable, FileListDat
                 return null;
 
             }
-        }else{
+        } else {
 
 
             try {

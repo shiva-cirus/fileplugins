@@ -156,20 +156,17 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
 
 
         // Create GCS Storage using the credentials
-        storage = getGoogleStorage(gcsServiceAccountJson, project, proxy,proxyType,useProxy);
-        if (storage == null){
+        storage = getGoogleStorage(gcsServiceAccountJson, project, proxyType, useProxy);
+        if (storage == null) {
             LOG.error("Unable to connect to Google Services. ");
             throw new IOException("Unable to connect to Google Services. ");
         }
         LOG.info("Created GCS Storage");
         bucket = getBucket(storage, bucketName);
-        if (bucket == null){
-            LOG.error("Unable to create or get bucket "+bucketName);
-            throw new IOException("Unable to create or get bucket "+bucketName);
+        if (bucket == null) {
+            LOG.error("Unable to create or get bucket " + bucketName);
+            throw new IOException("Unable to create or get bucket " + bucketName);
         }
-
-
-
 
 
         try {
@@ -254,7 +251,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     }
 
     private static FileMetaData getFileMetaData(String filePath, String uri) throws IOException {
-        return new FileMetaData(uri + '/' + filePath, conf);
+        LOG.debug("getFileMetaData: uri={}, filePath={}", uri, filePath);
+        return new FileMetaData(filePath, uri, conf);
     }
 
     private void extractHostAndPortFromProxy() {
@@ -270,10 +268,10 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         }
     }
 
-    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxy, String proxyType, boolean useProxy) {
+    private Storage getGoogleStorage(String serviceAccountJSON, String project, String proxyType, boolean useProxy) {
         HttpTransportFactory transportFactory = null;
         Credentials credentials = null;
-        TransportOptions transportOptions=null;
+        TransportOptions transportOptions = null;
         StorageOptions.Builder builder = null;
 
         if (useProxy) {
@@ -301,7 +299,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
         if (useProxy) {
 
             try {
-                credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON),transportFactory);
+                credentials = GoogleCredentials.fromStream(new FileInputStream(serviceAccountJSON), transportFactory);
                 builder = StorageOptions.newBuilder()
                         .setCredentials(credentials)
                         .setProjectId(project)
@@ -312,7 +310,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                 return null;
 
             }
-        }else{
+        } else {
 
 
             try {
