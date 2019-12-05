@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "spec-version": "1.5"
+  },
+  "display-name": "Files Decrypter and Decompressor",
+  "configuration-groups": [
+    {
+      "label": "Basic",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Reference Name",
+          "name": "referenceName"
+        },
+        {
+          "widget-type": "select",
+          "label": "Scheme",
+          "name": "scheme",
+          "widget-attributes": {
+            "values": [
+              "hdfs",
+              "file"
+            ],
+            "default": "file"
+          }
+        },
+        {
+          "widget-type": "csv",
+          "label": "Source Paths",
+          "name": "sourcePaths"
+        },
+        {
+          "widget-type": "select",
+          "label": "Format",
+          "name": "format",
+          "widget-attributes": {
+            "values": [
+              "csv"
+            ],
+            "default": "csv"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Maximum Split Size",
+          "name": "maxSplitSize",
+          "widget-attributes": {
+            "placeholder": "Maximum split size for each partition specified in bytes"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Copy Recursively",
+          "name": "recursiveCopy",
+          "widget-attributes": {
+            "values": [
+              "true",
+              "false"
+            ],
+            "default": "true"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Decryption",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Decryption Algorithm",
+          "name": "decryptionAlgorithm",
+          "widget-attributes": {
+            "values": [
+              "PGP",
+              "NONE"
+            ],
+            "default": "PGP"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Private key File Path",
+          "name": "privateKeyFilePath"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Private key Password",
+          "name": "password"
+        }
+      ]
+    },
+    {
+      "label": "DeCompression",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "DeCompression Format",
+          "name": "decompressionFormat",
+          "widget-attributes": {
+            "values": [
+              "ZIP",
+              "NONE"
+            ],
+            "default": "ZIP"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "schema",
+      "widget-type": "schema",
+      "widget-attributes": {
+        "default-schema": {
+          "name": "fileRecord",
+          "type": "record",
+          "fields": [
+            {
+              "name": "csv_body",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
