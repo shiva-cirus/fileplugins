@@ -66,6 +66,7 @@ public class FileDecompressDecryptSource
 
   @Override
   public void prepareRun(BatchSourceContext context) throws Exception {
+    config.validate();
     Job job = JobUtils.createInstance();
     Configuration conf = job.getConfiguration();
 

@@ -5,6 +5,7 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.common.ReferencePluginConfig;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 
@@ -84,6 +85,15 @@ public class FileDecompressDecryptSourceConfig extends ReferencePluginConfig {
   }
 
   public void validate() {
+    if (decryptFile() && StringUtils.isEmpty(privateKeyFilePath)) {
+      throw new IllegalArgumentException(String.format("Decryption is  enabled and PGP Private Key path is missing for %s plugin." +
+              " Please provide the same."));
+    }
+
+    if (decryptFile() && StringUtils.isNotEmpty(privateKeyFilePath) && StringUtils.isEmpty(password)) {
+      throw new IllegalArgumentException(String.format("Provide password for Private Key File."));
+    }
+
     if (!this.containsMacro("maxSplitSize")) {
       if (maxSplitSize <= 0) {
         throw new IllegalArgumentException("Max split size must be a positive integer.");
