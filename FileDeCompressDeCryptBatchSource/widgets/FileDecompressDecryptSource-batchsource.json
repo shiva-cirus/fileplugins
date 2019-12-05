@@ -72,18 +72,6 @@
       "properties": [
         {
           "widget-type": "select",
-          "label": "Decrypt File",
-          "name": "decrypt",
-          "widget-attributes": {
-            "values": [
-              "true",
-              "false"
-            ],
-            "default": "true"
-          }
-        },
-        {
-          "widget-type": "select",
           "label": "Decryption Algorithm",
           "name": "decryptionAlgorithm",
           "widget-attributes": {
@@ -108,18 +96,6 @@
     {
       "label": "DeCompression",
       "properties": [
-        {
-          "widget-type": "select",
-          "label": "Decompress File",
-          "name": "decompress",
-          "widget-attributes": {
-            "values": [
-              "true",
-              "false"
-            ],
-            "default": "true"
-          }
-        },
         {
           "widget-type": "select",
           "label": "DeCompression Format",

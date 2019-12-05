@@ -16,9 +16,7 @@
 
 package io.cdap.plugin.file.ingest.fs;
 
-import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
-import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Input;
@@ -29,7 +27,6 @@ import io.cdap.cdap.etl.api.Emitter;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
-import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.common.SourceInputFormatProvider;
 import io.cdap.plugin.common.batch.JobUtils;
 import io.cdap.plugin.file.ingest.FileInputFormat;
@@ -42,7 +39,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.net.URI;
 import java.sql.Date;
 import java.sql.Time;
@@ -76,8 +72,8 @@ public class FileDecompressDecryptSource
     Job job = JobUtils.createInstance();
     Configuration conf = job.getConfiguration();
 
-    conf.setBoolean("decrypt", config.decrypt);
-    conf.setBoolean("decompress", config.decompress);
+    conf.setBoolean("decrypt", config.decryptFile());
+    conf.setBoolean("decompress", config.decompressFile());
     conf.set("privateKeyFilePath", config.privateKeyFilePath);
     conf.set("password", config.password);
 
@@ -173,5 +169,4 @@ public class FileDecompressDecryptSource
     FileInputFormat.setMaxSplitSize(conf, config.maxSplitSize);
     FileInputFormat.setRecursiveCopy(conf, config.recursiveCopy.toString());
   }
-
 }
