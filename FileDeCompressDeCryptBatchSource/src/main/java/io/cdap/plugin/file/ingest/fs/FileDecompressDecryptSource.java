@@ -61,10 +61,6 @@ public class FileDecompressDecryptSource
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     super.configurePipeline(pipelineConfigurer);
-    List<Schema.Field> fieldList = config.getSchema().getFields();
-    pipelineConfigurer
-        .getStageConfigurer()
-        .setOutputSchema(Schema.recordOf("fileSchema", fieldList));
   }
 
   @Override
