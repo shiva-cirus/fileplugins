@@ -6,7 +6,7 @@ This plugin will have additional options to decrypt and file first and optionall
 
 Use Case
 --------
-Use these plugins to create a pipeline that synchrnizes files in your local HDFS periodically with an Amazon S3 filesystem.
+This plugin will have additional options to decrypt and file first and optionally decompress and then process. 
  
 Build
 -----

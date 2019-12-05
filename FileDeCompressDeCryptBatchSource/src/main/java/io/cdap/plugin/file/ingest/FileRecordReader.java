@@ -25,6 +25,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.bouncycastle.openpgp.PGPException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.security.NoSuchProviderException;
@@ -35,7 +37,7 @@ import java.util.zip.ZipFile;
 
 /** Returns key that contains file path. Returns value that contains file metadata. */
 public class FileRecordReader extends RecordReader<Long, CSVRecord> {
-
+  private static final Logger LOG = LoggerFactory.getLogger(FileRecordReader.class);
   protected FileInputSplit split;
   private long rowIdx;
   private InputStream inputFileStream;
@@ -71,6 +73,7 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
     this.split = (FileInputSplit) inputSplit;
     Configuration configuration = taskAttemptContext.getConfiguration();
     String filePath = this.split.getFileMetaDataList().get(0).getFullPath();
+    String hostURI = this.split.getFileMetaDataList().get(0).getHostURI();
     String privateKeyFilePath = configuration.get("privateKeyFilePath");
     char[] privateKeyPassword = configuration.get("password").toCharArray(); // "passphrase";
     Boolean decrypt = configuration.getBoolean("decrypt", false);
@@ -79,9 +82,9 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
       if (decrypt) {
         if (decompress) {
           inputFileStream =
-              FileUtil.decryptAndDecompress(filePath, privateKeyFilePath, privateKeyPassword);
+              FileUtil.decryptAndDecompress(filePath, privateKeyFilePath, privateKeyPassword,hostURI,configuration);
         } else {
-          inputFileStream = FileUtil.decrypt(filePath, privateKeyFilePath, privateKeyPassword);
+          inputFileStream = FileUtil.decrypt(filePath, privateKeyFilePath, privateKeyPassword,hostURI,configuration);
         }
       } else {
         if (decompress) {
@@ -90,7 +93,7 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
           ZipEntry ze = (ZipEntry) entries.nextElement();
           inputFileStream = zf.getInputStream(ze);
         } else {
-          inputFileStream = new FileInputStream(filePath);
+          inputFileStream = FileUtil.getFSInputStream(filePath,hostURI,configuration);
         }
       }
 
@@ -114,6 +117,8 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
       e.printStackTrace();
     }
   }
+
+
 
   @Override
   public CSVRecord getCurrentValue() throws IOException, InterruptedException {

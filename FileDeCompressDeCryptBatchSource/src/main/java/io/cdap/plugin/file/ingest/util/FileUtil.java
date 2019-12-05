@@ -3,24 +3,35 @@ package io.cdap.plugin.file.ingest.util;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URI;
 import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.Iterator;
 
 public class FileUtil {
-
+  private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
   /** decrypt and decompress the passed in message stream */
   public static InputStream decryptAndDecompress(
-      String inputFileName, String keyFileName, char[] privateKeyPassword)
+      String inputFileName,
+      String keyFileName,
+      char[] privateKeyPassword,
+      String uri,
+      Configuration conf)
       throws IOException, NoSuchProviderException, PGPException {
-    InputStream in = new BufferedInputStream(new FileInputStream(inputFileName));
+    InputStream in = getFSInputStream(inputFileName,uri,conf);
     InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
 
     in = PGPUtil.getDecoderStream(in);
@@ -85,9 +96,13 @@ public class FileUtil {
   }
   /** decrypt */
   public static InputStream decrypt(
-      String inputFileName, String keyFileName, char[] privateKeyPassword)
+      String inputFileName,
+      String keyFileName,
+      char[] privateKeyPassword,
+      String uri,
+      Configuration conf)
       throws IOException, NoSuchProviderException, PGPException {
-    InputStream in = new BufferedInputStream(new FileInputStream(inputFileName));
+    InputStream in = getFSInputStream(inputFileName,uri,conf);
     InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
 
     in = PGPUtil.getDecoderStream(in);
@@ -146,6 +161,34 @@ public class FileUtil {
     }
   }
 
+  public static FSDataInputStream getFSInputStream(String filePath, String uri, Configuration conf)
+      throws IOException {
+    Path path = null;
+    FileSystem fileSystem = null;
+    if (uri.startsWith("hdfs")) {
+      String strPath = uri + filePath;
+      LOG.debug("FileMetaData::hdfs:: {}", strPath);
+      path = new Path(strPath);
+      LOG.debug("FileMetaData::hdfs:: path.toString() = {}", path.toString());
+      try {
+        fileSystem = FileSystem.get(URI.create(uri), conf);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else {
+      String strPath = uri + '/' + filePath;
+      LOG.debug("FileMetaData::else:: {}", strPath);
+      path = new Path(strPath);
+      LOG.debug("FileMetaData::else:: path.toString() = {}", path.toString());
+      try {
+        fileSystem = path.getFileSystem(conf);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    return fileSystem.open(path);
+  }
+
   public static void main(String[] args) throws Exception {
     Security.addProvider(new BouncyCastleProvider());
     String filePath = "/Users/aca/Desktop/Pawan/cdap/data/vcp8/csv/domain_master.csv.zip.pgp";
@@ -153,7 +196,7 @@ public class FileUtil {
         "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr";
     String privateKeyPassword = "passphrase";
     InputStream inputStream =
-        decryptAndDecompress(filePath, keyFileName, privateKeyPassword.toCharArray());
+        decryptAndDecompress(filePath, keyFileName, privateKeyPassword.toCharArray(), null, null);
     try {
       InputStreamReader isReader = new InputStreamReader(inputStream);
       // Creating a BufferedReader object
