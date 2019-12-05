@@ -2,7 +2,7 @@
 
 Description
 -----------
-File List plugin return the list of file in directory recursively.
+This plugin will have additional options to decrypt and file first and optionally decompress and then process. 
 
 Use Case
 --------
