@@ -83,6 +83,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.9</version>
+        </dependency>
+        <dependency>
             <groupId>io.cdap.cdap</groupId>
             <artifactId>cdap-etl-api</artifactId>
             <version>${cdap.version}</version>
