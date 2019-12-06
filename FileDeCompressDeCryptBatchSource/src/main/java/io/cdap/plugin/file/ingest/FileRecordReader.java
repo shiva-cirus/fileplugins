@@ -111,7 +111,6 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
               CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
 
       rows = csvParser.iterator();
-      LOG.info(rows.toString());
       rowIdx = 0;
 
     } catch (IOException e) {
