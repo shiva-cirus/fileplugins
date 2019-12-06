@@ -1,0 +1,120 @@
+{
+    "name": "UC4",
+    "description": "Decompress / Decrypt and Persist to BigQuery",
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "version": "6.0.0",
+        "scope": "SYSTEM"
+    },
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "Files Decrypter and Decompressor2",
+                "to": "BigQuery"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {},
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "name": "Files Decrypter and Decompressor2",
+                "plugin": {
+                    "name": "FileDecompressDecryptSource",
+                    "type": "batchsource",
+                    "label": "Files Decrypter and Decompressor2",
+                    "artifact": {
+                        "name": "FileDecompressDecryptSource",
+                        "version": "1.4.0",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "scheme": "hdfs",
+                        "format": "csv",
+                        "recursiveCopy": "true",
+                        "decryptionAlgorithm": "PGP",
+                        "decompressionFormat": "ZIP",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"int\",\"type\":\"int\"},{\"name\":\"long\",\"type\":\"long\"},{\"name\":\"date\",\"type\":\"string\"},{\"name\":\"string\",\"type\":\"string\"},{\"name\":\"boolean\",\"type\":\"boolean\"},{\"name\":\"bytes\",\"type\":\"string\"},{\"name\":\"double\",\"type\":\"double\"},{\"name\":\"decimal\",\"type\":\"string\"},{\"name\":\"float\",\"type\":\"float\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"}]}",
+                        "sourcePaths": "${SOURCE_FILE_PATH}",
+                        "referenceName": "input",
+                        "password": "${PRIVATE_KEY_PASSWORD}",
+                        "privateKeyFilePath": "${PGP_PRIVATE_KEY_FILE}",
+                        "maxSplitSize": "${SPLIT_SIZE}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"int\",\"type\":\"int\"},{\"name\":\"long\",\"type\":\"long\"},{\"name\":\"date\",\"type\":\"string\"},{\"name\":\"string\",\"type\":\"string\"},{\"name\":\"boolean\",\"type\":\"boolean\"},{\"name\":\"bytes\",\"type\":\"string\"},{\"name\":\"double\",\"type\":\"double\"},{\"name\":\"decimal\",\"type\":\"string\"},{\"name\":\"float\",\"type\":\"float\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsource",
+                "label": "Files Decrypter and Decompressor2",
+                "icon": "fa-plug",
+                "$$hashKey": "object:2532",
+                "_uiPosition": {
+                    "left": "470px",
+                    "top": "249.5px"
+                }
+            },
+            {
+                "name": "BigQuery",
+                "plugin": {
+                    "name": "BigQueryTable",
+                    "type": "batchsink",
+                    "label": "BigQuery",
+                    "artifact": {
+                        "name": "google-cloud",
+                        "version": "0.12.2",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "project": "${GCS_PROJECT_ID}",
+                        "allowSchemaRelaxation": "false",
+                        "serviceFilePath": "${GCS_SERVICEACCOUNT_JSON_FILE}",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"int\",\"type\":\"int\"},{\"name\":\"long\",\"type\":\"long\"},{\"name\":\"date\",\"type\":\"string\"},{\"name\":\"string\",\"type\":\"string\"},{\"name\":\"boolean\",\"type\":\"boolean\"},{\"name\":\"bytes\",\"type\":\"string\"},{\"name\":\"double\",\"type\":\"double\"},{\"name\":\"decimal\",\"type\":\"string\"},{\"name\":\"float\",\"type\":\"float\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"}]}",
+                        "referenceName": "output",
+                        "dataset": "${DATASET}",
+                        "table": "${TABLE}",
+                        "bucket": "${GCS_BUCKETNAME}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"int\",\"type\":\"int\"},{\"name\":\"long\",\"type\":\"long\"},{\"name\":\"date\",\"type\":\"string\"},{\"name\":\"string\",\"type\":\"string\"},{\"name\":\"boolean\",\"type\":\"boolean\"},{\"name\":\"bytes\",\"type\":\"string\"},{\"name\":\"double\",\"type\":\"double\"},{\"name\":\"decimal\",\"type\":\"string\"},{\"name\":\"float\",\"type\":\"float\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "Files Decrypter and Decompressor2",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"int\",\"type\":\"int\"},{\"name\":\"long\",\"type\":\"long\"},{\"name\":\"date\",\"type\":\"string\"},{\"name\":\"string\",\"type\":\"string\"},{\"name\":\"boolean\",\"type\":\"boolean\"},{\"name\":\"bytes\",\"type\":\"string\"},{\"name\":\"double\",\"type\":\"double\"},{\"name\":\"decimal\",\"type\":\"string\"},{\"name\":\"float\",\"type\":\"float\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "type": "batchsink",
+                "label": "BigQuery",
+                "icon": "fa-plug",
+                "$$hashKey": "object:2533",
+                "_uiPosition": {
+                    "left": "770px",
+                    "top": "249.5px"
+                }
+            }
+        ],
+        "schedule": "0 * * * *",
+        "engine": "mapreduce",
+        "numOfRecordsPreview": 100,
+        "description": "Decompress / Decrypt and Persist to BigQuery",
+        "maxConcurrentRuns": 1
+    }
+}
