@@ -18,8 +18,12 @@ package io.cdap.plugin.file.ingest;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.file.ingest.util.FileUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -32,6 +36,7 @@ import java.net.URISyntaxException;
  * specific to different filesystems.
  */
 public class FileMetaData implements Comparable<FileMetaData> {
+  private static final Logger LOG = LoggerFactory.getLogger(FileMetaData.class);
 
   public static final String FILE_SIZE = "fileSize";
   public static final String FULL_PATH = "fullPath";
@@ -86,25 +91,51 @@ public class FileMetaData implements Comparable<FileMetaData> {
     fullPath = fileStatus.getPath().toUri().getPath();
     isDir = fileStatus.isDirectory();
     fileSize = fileStatus.getLen();
-    // check if sourcePath is a valid prefix of fullPath
-    if (fullPath.startsWith(sourcePath)) {
-      relativePath = fullPath.substring(sourcePath.lastIndexOf(Path.SEPARATOR) + 1);
+
+    LOG.debug("fullPath = {}", fullPath);
+    LOG.debug("sourcePath = {}", sourcePath);
+
+    if (fileStatus.getPath().toUri().getScheme().startsWith("hdfs")) {
+      // construct host URI given the full path from filestatus
+      try {
+        hostURI =
+            new URI(
+                    fileStatus.getPath().toUri().getScheme(),
+                    null,
+                    fileStatus.getPath().toUri().getHost(),
+                    fileStatus.getPath().toUri().getPort(),
+                    null,
+                    null,
+                    null)
+                .toString();
+      } catch (URISyntaxException e) {
+        throw new IOException(e);
+      }
     } else {
-      throw new IOException("sourcePath should be a valid prefix of fullPath");
+      try {
+        hostURI =
+            new URI(
+                    fileStatus.getPath().toUri().getScheme(),
+                    fileStatus.getPath().toUri().getHost(),
+                    Path.SEPARATOR,
+                    null)
+                .toString();
+      } catch (URISyntaxException e) {
+        throw new IOException(e);
+      }
     }
 
-    // construct host URI given the full path from filestatus
-    try {
-      hostURI =
-          new URI(
-                  fileStatus.getPath().toUri().getScheme(),
-                  fileStatus.getPath().toUri().getHost(),
-                  Path.SEPARATOR,
-                  null)
-              .toString();
-    } catch (URISyntaxException e) {
-      throw new IOException(e);
+    LOG.debug("hostURI = {}", hostURI);
+
+    if (hostURI.startsWith("hdfs:/") && sourcePath.startsWith("hdfs:/")) {
+      relativePath =
+          fullPath.substring(
+              StringUtils.replace(sourcePath, hostURI, "").lastIndexOf(Path.SEPARATOR) + 1);
+    } else {
+      relativePath = fullPath.substring(sourcePath.lastIndexOf(Path.SEPARATOR) + 1);
     }
+
+    LOG.debug("relativePath = {}", relativePath);
   }
 
   /**
