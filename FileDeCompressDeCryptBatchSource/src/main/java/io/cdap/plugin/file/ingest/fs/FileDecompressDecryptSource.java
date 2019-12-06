@@ -72,8 +72,16 @@ public class FileDecompressDecryptSource
 
     conf.setBoolean("decrypt", config.decryptFile());
     conf.setBoolean("decompress", config.decompressFile());
-    conf.set("privateKeyFilePath", config.privateKeyFilePath);
-    conf.set("password", config.password);
+    if (config.privateKeyFilePath != null) {
+      conf.set("privateKeyFilePath", config.privateKeyFilePath);
+    } else {
+      conf.set("privateKeyFilePath", "");
+    }
+    if (config.password != null) {
+      conf.set("password", config.password);
+    } else {
+      conf.set("password", "");
+    }
 
     // initialize configurations
     setDefaultConf(conf);

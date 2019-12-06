@@ -66,7 +66,7 @@ public class FileDecompressDecryptSourceConfig extends ReferencePluginConfig {
   }
 
   public FileDecompressDecryptSourceConfig(
-      String name, String sourcePaths, Integer maxSplitSize, String scheme,String privateKeyFilePath,String password) {
+      String name, String sourcePaths, Integer maxSplitSize, String scheme,@Nullable String privateKeyFilePath,@Nullable String password) {
     super(name);
     this.sourcePaths = sourcePaths;
     this.maxSplitSize = maxSplitSize;
