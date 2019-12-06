@@ -19,7 +19,11 @@ import java.io.*;
 import java.net.URI;
 import java.security.NoSuchProviderException;
 import java.security.Security;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 public class FileUtil {
   private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
@@ -161,6 +165,19 @@ public class FileUtil {
     }
   }
 
+
+  public static InputStream decompress(String inputFileName,String uri,
+                                       Configuration conf)throws IOException {
+
+    InputStream in = getFSInputStream(inputFileName,uri,conf);
+    ZipInputStream zip = new ZipInputStream( in );
+    zip.getNextEntry();
+    return zip;
+  }
+
+
+
+
   public static FSDataInputStream getFSInputStream(String filePath, String uri, Configuration conf)
       throws IOException {
     Path path = null;
@@ -189,14 +206,19 @@ public class FileUtil {
     return fileSystem.open(path);
   }
 
+
+
+
+
+/*
   public static void main(String[] args) throws Exception {
     Security.addProvider(new BouncyCastleProvider());
-    String filePath = "/Users/aca/Desktop/Pawan/cdap/data/vcp8/csv/domain_master.csv.zip.pgp";
+    String filePath = "/Users/shiva/Downloads/test1.zip";
     String keyFileName =
         "/Users/aca/Desktop/Pawan/cdap/plugin/fileplugins/FileDeCompressDeCryptBatchSource/PGP1D0.skr";
     String privateKeyPassword = "passphrase";
     InputStream inputStream =
-        decryptAndDecompress(filePath, keyFileName, privateKeyPassword.toCharArray(), null, null);
+        decompress(filePath,  null, null);
     try {
       InputStreamReader isReader = new InputStreamReader(inputStream);
       // Creating a BufferedReader object
@@ -218,4 +240,5 @@ public class FileUtil {
       e.printStackTrace();
     }
   }
+  */
 }

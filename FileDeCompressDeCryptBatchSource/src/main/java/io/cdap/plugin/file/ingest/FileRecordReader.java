@@ -64,6 +64,7 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
 
   @Override
   public float getProgress() throws IOException, InterruptedException {
+
     return rowIdx / rowIdx;
   }
 
@@ -88,10 +89,13 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
         }
       } else {
         if (decompress) {
-          ZipFile zf = new ZipFile(filePath);
-          Enumeration entries = zf.entries();
-          ZipEntry ze = (ZipEntry) entries.nextElement();
-          inputFileStream = zf.getInputStream(ze);
+
+          //ZipFile zf = new ZipFile(filePath);
+          //Enumeration entries = zf.entries();
+          //ZipEntry ze = (ZipEntry) entries.nextElement();
+          //inputFileStream = zf.getInputStream(ze);
+            inputFileStream = FileUtil.decompress(filePath,hostURI,configuration);
+
         } else {
           inputFileStream = FileUtil.getFSInputStream(filePath,hostURI,configuration);
         }
@@ -107,6 +111,7 @@ public class FileRecordReader extends RecordReader<Long, CSVRecord> {
               CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
 
       rows = csvParser.iterator();
+      LOG.info(rows.toString());
       rowIdx = 0;
 
     } catch (IOException e) {

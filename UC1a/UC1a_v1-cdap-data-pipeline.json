@@ -35,7 +35,7 @@
                     "label": "File List Capturer",
                     "artifact": {
                         "name": "FileListSource",
-                        "version": "1.0.0",
+                        "version": "1.4.0",
                         "scope": "USER"
                     },
                     "properties": {
@@ -69,7 +69,7 @@
                     "label": "fileCompressEncryptGCSBatchSink",
                     "artifact": {
                         "name": "filecompressencryptgcs",
-                        "version": "1.3.0",
+                        "version": "1.4.0",
                         "scope": "USER"
                     },
                     "properties": {

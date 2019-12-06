@@ -3,6 +3,7 @@ package io.cdap.plugin.file.ingest.config;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
+import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -29,10 +30,12 @@ public class FileDecompressDecryptSourceConfig extends ReferencePluginConfig {
   public String scheme;
 
   @Macro
+  @Nullable
   @Description("Private key File Path.")
   public String privateKeyFilePath;
 
   @Macro
+  @Nullable
   @Description("Password of the private key")
   public String password;
 
