@@ -179,7 +179,11 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             fieldSysPath.set(null, null);
 
             // Load the JNI library
-            System.loadLibrary("vibesimplejava");
+            try {
+                System.loadLibrary("vibesimplejava");
+            } catch (UnsatisfiedLinkError ule) {
+                LOG.warn("vibesimplejava already loaded, {}", ule.getMessage());
+            }
 
             // Print the API version
             LOG.info("SimpleAPI version: " + LibraryContext.getVersion());
@@ -223,7 +227,6 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                             .setSharedSecret(sharedSecret)
                             .setIdentity(identity)
                             .build();
-                    LOG.debug(fpe.getFullIdentity());
                     LOG.debug("Created library.getFPEBuilder for {}...", fieldFormat);
                     mapFPE.put(fieldFormat, fpe);
                 }
