@@ -203,14 +203,22 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             cachePath = conf.get(FileAnonymizedOutputFormat.NAME_CACHE_PATH, null);
             LOG.info("Cache Path - " + cachePath);
 
-            LOG.info("Building LibraryContext...");
-
             // Create the context for crypto operations
-            library = new LibraryContext.Builder()
-                    .setPolicyURL(policyUrl)
-                    .setFileCachePath(cachePath)
-                    .setTrustStorePath(trustStorePath)
-                    .build();
+            if (StringUtils.isNotEmpty(policyUrl) && StringUtils.startsWith(policyUrl, "http")) {
+                LOG.info("Building LibraryContext with policy url...");
+                library = new LibraryContext.Builder()
+                        .setPolicyURL(policyUrl)
+                        .setFileCachePath(cachePath)
+                        .setTrustStorePath(trustStorePath)
+                        .build();
+            } else {
+                LOG.info("Building LibraryContext with policy file...");
+                library = new LibraryContext.Builder()
+                        .setPolicyFilePath(policyUrl)
+                        .setFileCachePath(cachePath)
+                        .setTrustStorePath(trustStorePath)
+                        .build();
+            }
 
             //Build map of FPE objects for each format
             for (FieldInfo field : fields) {
