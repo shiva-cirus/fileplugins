@@ -160,6 +160,8 @@ public class FileAnonymizerBatchSink extends BatchSink<StructuredRecord, NullWri
             FileAnonymizedOutputFormat.setBufferSize(conf, config.getBufferSize());
             FileAnonymizedOutputFormat.setPolicyUrl(conf, config.getPolicyUrl());
             FileAnonymizedOutputFormat.setIdentity(conf, config.getIdentity());
+            FileAnonymizedOutputFormat.setUserName(conf, config.getuserName());
+            FileAnonymizedOutputFormat.setPassWord(conf, config.getpassword());
             FileAnonymizedOutputFormat.setSharedSecret(conf, config.getSharedSecret());
             FileAnonymizedOutputFormat.setTrustStorePath(conf, config.getTrustStorePath());
             FileAnonymizedOutputFormat.setCachePath(conf, config.getCachePath());

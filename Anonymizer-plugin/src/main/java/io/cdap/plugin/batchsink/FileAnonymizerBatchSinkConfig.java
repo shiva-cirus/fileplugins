@@ -73,7 +73,18 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
     @Name("sharedSecret")
     @Description("Specify the Shared Secret")
     @Macro
+    @Nullable
     private String sharedSecret;
+
+    @Name("userName")
+    @Description("Specify the username")
+    @Macro
+    private String username;
+
+    @Name("passWord")
+    @Description("Specify the password")
+    @Macro
+    private String password;
 
     @Name("trustStorePath")
     @Description("Specify the Trust Store Path")
@@ -111,8 +122,8 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
     private String proxyType = ProxyType.NONE.getType();
 
     public FileAnonymizerBatchSinkConfig(String path, @Nullable String suffix, String project, String serviceFilePath,
-                                         String bufferSize, String policyUrl, String identity, String sharedSecret,
-                                         String trustStorePath, String cachePath, String format, String ignoreHeader,
+                                         String bufferSize, String policyUrl, String identity, String sharedSecret, String username,
+                                         String password, String trustStorePath, String cachePath, String format, String ignoreHeader,
                                          String fieldList, @Nullable String proxy, String proxyType) {
         this.path = path;
         this.suffix = suffix;
@@ -122,6 +133,8 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
         this.policyUrl = policyUrl;
         this.identity = identity;
         this.sharedSecret = sharedSecret;
+        this.username = username;
+        this.password = password;
         this.trustStorePath = trustStorePath;
         this.cachePath = cachePath;
         this.format = format;
@@ -169,6 +182,14 @@ public class FileAnonymizerBatchSinkConfig extends PluginConfig {
 
     public String getSharedSecret() {
         return sharedSecret;
+    }
+
+    public String getuserName() {
+        return username;
+    }
+
+    public String getpassword() {
+        return password;
     }
 
     public String getTrustStorePath() {

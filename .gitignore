@@ -4,3 +4,7 @@ target/*
 *.log
 *.class
 *.idea
+.vscode/
+.classpath
+.project
+.settings/
