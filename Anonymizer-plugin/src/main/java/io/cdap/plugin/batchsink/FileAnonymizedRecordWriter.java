@@ -80,6 +80,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
     private Bucket bucket = null;
     private String policyUrl;
     private String identity;
+    private String username;
+    private String password;
     private String sharedSecret;
     private String trustStorePath;
     private String cachePath;
@@ -197,6 +199,12 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
             sharedSecret = conf.get(FileAnonymizedOutputFormat.NAME_SHARED_SECRET, null);
             LOG.info("Shared Secret - " + sharedSecret);
 
+            username = conf.get(FileAnonymizedOutputFormat.NAME_USERNAME, null);
+            LOG.info("Username - " + username);
+
+            password = conf.get(FileAnonymizedOutputFormat.NAME_PASSWORD, null);
+            LOG.info("Password - " + password);
+
             trustStorePath = conf.get(FileAnonymizedOutputFormat.NAME_TRUST_STORE_PATH, null);
             LOG.info("Trust Store Path - " + trustStorePath);
 
@@ -210,6 +218,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                         .setPolicyURL(policyUrl)
                         .setFileCachePath(cachePath)
                         .setTrustStorePath(trustStorePath)
+                        .allowShortFPE(true)
                         .build();
             } else {
                 LOG.info("Building LibraryContext with policy file...");
@@ -217,6 +226,7 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                         .setPolicyFilePath(policyUrl)
                         .setFileCachePath(cachePath)
                         .setTrustStorePath(trustStorePath)
+                        .allowShortFPE(true)
                         .build();
             }
 
@@ -231,8 +241,8 @@ public class FileAnonymizedRecordWriter extends RecordWriter<NullWritable, FileL
                 if (fpe == null) {
                     // Dev Guide Code Snippet: FPEBUILD; LC:5
                     // Protect and access the credit card number
-                    fpe = library.getFPEBuilder(fieldFormat)
-                            .setSharedSecret(sharedSecret)
+                    fpe = library.getFPEBuilder("AUTO")
+                            .setUsernamePassword(username, password)
                             .setIdentity(identity)
                             .build();
                     LOG.debug("Created library.getFPEBuilder for {}...", fieldFormat);

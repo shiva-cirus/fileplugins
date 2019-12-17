@@ -44,6 +44,8 @@ public class FileAnonymizedOutputFormat extends OutputFormat {
     public static final String NAME_FIELD_LIST = "field.list";
     public static final String NAME_PROXY = "proxy";
     public static final String NAME_PROXY_TYPE = "proxytype";
+    public static final String NAME_PASSWORD = "password";
+    public static final String NAME_USERNAME = "username";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileAnonymizedOutputFormat.class);
 
@@ -77,6 +79,14 @@ public class FileAnonymizedOutputFormat extends OutputFormat {
 
     public static void setIdentity(Map<String, String> conf, String value) {
         conf.put(NAME_IDENTITY, value);
+    }
+
+    public static void setUserName(Map<String, String> conf, String value) {
+        conf.put(NAME_USERNAME, value);
+    }
+
+    public static void setPassWord(Map<String, String> conf, String value) {
+        conf.put(NAME_PASSWORD, value);
     }
 
     public static void setSharedSecret(Map<String, String> conf, String value) {
